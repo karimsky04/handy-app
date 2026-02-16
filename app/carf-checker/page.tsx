@@ -353,6 +353,7 @@ export default function CARFChecker() {
   const [activatedFactors, setActivatedFactors] = useState<string[]>([]);
   const [email, setEmail] = useState("");
   const [emailSubmitted, setEmailSubmitted] = useState(false);
+  const [emailSubmitting, setEmailSubmitting] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const step2Ref = useRef<HTMLDivElement>(null);
@@ -729,9 +730,27 @@ export default function CARFChecker() {
                     No spam, no sales calls.
                   </p>
                   <form
-                    onSubmit={(e) => {
+                    onSubmit={async (e) => {
                       e.preventDefault();
-                      if (email) setEmailSubmitted(true);
+                      if (!email || emailSubmitting) return;
+                      setEmailSubmitting(true);
+                      try {
+                        await fetch("/api/carf-submit", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            email,
+                            country: country?.code,
+                            exchanges: selectedExchanges,
+                            riskFactors: activatedFactors,
+                            riskLevel: risk?.level,
+                          }),
+                        });
+                      } catch (err) {
+                        console.error(err);
+                      }
+                      setEmailSubmitted(true);
+                      setEmailSubmitting(false);
                     }}
                     className="flex flex-col sm:flex-row gap-3"
                   >
@@ -745,9 +764,10 @@ export default function CARFChecker() {
                     />
                     <button
                       type="submit"
-                      className="px-6 py-3 bg-teal text-navy font-semibold rounded-lg hover:bg-teal-light transition-colors whitespace-nowrap"
+                      disabled={emailSubmitting}
+                      className="px-6 py-3 bg-teal text-navy font-semibold rounded-lg hover:bg-teal-light transition-colors whitespace-nowrap disabled:opacity-50"
                     >
-                      Send My Report
+                      {emailSubmitting ? "Sending..." : "Send My Report"}
                     </button>
                   </form>
                 </>
@@ -769,11 +789,11 @@ export default function CARFChecker() {
                     </svg>
                   </div>
                   <p className="font-semibold mb-1">
-                    Check your inbox.
+                    Report sent! Check your inbox.
                   </p>
                   <p className="text-sm text-gray-400 mb-4">
-                    Want to go deeper? Get a full compliance assessment with
-                    jurisdiction-specific guidance.
+                    Want to map all your obligations? Try our free compliance
+                    checker for a full multi-jurisdiction assessment.
                   </p>
                   <Link
                     href="/onboarding"

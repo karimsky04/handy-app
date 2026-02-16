@@ -7,6 +7,7 @@ import StepResidence from "./step-residence";
 import StepAssets from "./step-assets";
 import StepTaxYears from "./step-tax-years";
 import StepAccountant from "./step-accountant";
+import StepContact from "./step-contact";
 import StepResults from "./step-results";
 
 export interface PreviousCountry {
@@ -25,6 +26,9 @@ export interface OnboardingData {
   taxYears: string[];
   filedCryptoBefore: boolean | null;
   accountantStatus: string;
+  fullName: string;
+  email: string;
+  phone: string;
 }
 
 const INITIAL_DATA: OnboardingData = {
@@ -37,22 +41,18 @@ const INITIAL_DATA: OnboardingData = {
   taxYears: [],
   filedCryptoBefore: null,
   accountantStatus: "",
+  fullName: "",
+  email: "",
+  phone: "",
 };
-
-const STEP_TITLES = [
-  "Where do you live?",
-  "What do you have?",
-  "Tax years",
-  "Your accountant",
-  "Your Compliance Map",
-];
 
 export default function Onboarding() {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [direction, setDirection] = useState<"forward" | "back">("forward");
+  const [submitted, setSubmitted] = useState(false);
 
-  const totalSteps = 5;
+  const totalSteps = 6;
 
   function next() {
     if (step < totalSteps - 1) {
@@ -124,7 +124,20 @@ export default function Onboarding() {
             onBack={back}
           />
         )}
-        {step === 4 && <StepResults data={data} onBack={back} />}
+        {step === 4 && (
+          <StepContact
+            data={data}
+            update={update}
+            onNext={() => {
+              setSubmitted(true);
+              next();
+            }}
+            onBack={back}
+          />
+        )}
+        {step === 5 && (
+          <StepResults data={data} onBack={back} submitted={submitted} />
+        )}
       </section>
     </main>
   );

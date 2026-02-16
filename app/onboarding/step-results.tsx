@@ -581,9 +581,10 @@ function EmailModal({ onClose }: { onClose: () => void }) {
 interface Props {
   data: OnboardingData;
   onBack: () => void;
+  submitted?: boolean;
 }
 
-export default function StepResults({ data, onBack }: Props) {
+export default function StepResults({ data, onBack, submitted }: Props) {
   const [showEmailModal, setShowEmailModal] = useState(false);
 
   const allCountryCodes = [
@@ -763,58 +764,107 @@ export default function StepResults({ data, onBack }: Props) {
         </div>
       </div>
 
-      {/* Save / Download */}
-      <div className="mt-6 flex flex-col sm:flex-row gap-3">
-        <button
-          onClick={() => setShowEmailModal(true)}
-          className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-navy-light border border-gray-700 rounded-lg text-white font-medium hover:border-teal/40 transition-colors"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-            />
-          </svg>
-          Save My Compliance Map
-        </button>
-        <button className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-navy-light border border-gray-700 rounded-lg text-gray-400 font-medium hover:border-gray-600 hover:text-gray-300 transition-colors">
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-          Download PDF Summary
-        </button>
-      </div>
+      {/* Post-submission CTA or Save buttons */}
+      {submitted ? (
+        <>
+          {/* Confirmation */}
+          <div className="mt-8 bg-teal/5 border border-teal/20 rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-full bg-teal/15 flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold">
+                Your compliance map has been saved
+              </h3>
+            </div>
 
-      {/* CTA */}
-      <div className="mt-8 bg-gradient-to-r from-teal/10 to-teal/5 border border-teal/20 rounded-xl p-6 text-center">
-        <h3 className="text-lg font-semibold mb-2">
-          Ready to get compliant?
-        </h3>
-        <p className="text-sm text-gray-400 mb-5">
-          Connect with a crypto-savvy tax professional who covers your
-          jurisdictions.
-        </p>
-        <button className="px-8 py-3.5 bg-teal text-navy font-semibold rounded-lg hover:bg-teal-light transition-colors text-lg">
-          Get Started — Talk to an Expert
-        </button>
-      </div>
+            <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
+              What happens next
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <span className="text-lg flex-shrink-0">&#128231;</span>
+                <p className="text-sm text-gray-400">
+                  <span className="text-gray-200 font-medium">Check your inbox</span>
+                  {" — "}we&apos;ve sent your full compliance report to{" "}
+                  <span className="text-white">{data.email}</span>
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-lg flex-shrink-0">&#128269;</span>
+                <p className="text-sm text-gray-400">
+                  <span className="text-gray-200 font-medium">Expert matching in progress</span>
+                  {" — "}we&apos;re identifying the best professionals for your jurisdictions
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-lg flex-shrink-0">&#128222;</span>
+                <p className="text-sm text-gray-400">
+                  <span className="text-gray-200 font-medium">Expect a call within 24 hours</span>
+                  {" "}from your dedicated compliance coordinator
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Dashboard preview link */}
+          <div className="mt-6">
+            <Link
+              href="/dashboard"
+              className="flex items-center justify-between px-5 py-4 bg-navy-light border border-gray-700 rounded-xl hover:border-teal/30 transition-colors group"
+            >
+              <div>
+                <p className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors">
+                  In the meantime, explore what your Handy dashboard will look like
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  See the client workspace, expert coordination, and document hub
+                </p>
+              </div>
+              <svg className="w-5 h-5 text-gray-500 group-hover:text-teal transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
+          </div>
+
+          {/* Contact */}
+          <p className="mt-5 text-center text-sm text-gray-500">
+            Questions? Email us at{" "}
+            <span className="text-teal">hello@handytax.io</span>
+          </p>
+        </>
+      ) : (
+        <>
+          {/* Save / Download (non-submitted fallback) */}
+          <div className="mt-6 flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => setShowEmailModal(true)}
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-navy-light border border-gray-700 rounded-lg text-white font-medium hover:border-teal/40 transition-colors"
+            >
+              Save My Compliance Map
+            </button>
+            <button className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-navy-light border border-gray-700 rounded-lg text-gray-400 font-medium hover:border-gray-600 hover:text-gray-300 transition-colors">
+              Download PDF Summary
+            </button>
+          </div>
+
+          {/* CTA */}
+          <div className="mt-8 bg-gradient-to-r from-teal/10 to-teal/5 border border-teal/20 rounded-xl p-6 text-center">
+            <h3 className="text-lg font-semibold mb-2">
+              Ready to get compliant?
+            </h3>
+            <p className="text-sm text-gray-400 mb-5">
+              Connect with a crypto-savvy tax professional who covers your
+              jurisdictions.
+            </p>
+            <button className="px-8 py-3.5 bg-teal text-navy font-semibold rounded-lg hover:bg-teal-light transition-colors text-lg">
+              Get Started — Talk to an Expert
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Nav */}
       <div className="mt-8 flex items-center justify-between">
