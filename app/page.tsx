@@ -81,9 +81,17 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="px-8 py-8 border-t border-gray-800">
-        <div className="max-w-7xl mx-auto flex items-center justify-between text-sm text-gray-500">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-500">
           <span>&copy; 2026 Handy. All rights reserved.</span>
-          <span>Global tax compliance, simplified.</span>
+          <div className="flex items-center gap-6">
+            <Link
+              href="/experts/join"
+              className="hover:text-teal transition-colors"
+            >
+              For Tax Professionals &rarr; Join Our Expert Network
+            </Link>
+            <span className="hidden sm:inline">Global tax compliance, simplified.</span>
+          </div>
         </div>
       </footer>
     </main>

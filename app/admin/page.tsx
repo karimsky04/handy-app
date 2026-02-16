@@ -34,7 +34,28 @@ interface CARFLead {
   status: string;
 }
 
+interface ExpertApplication {
+  id: string;
+  created_at: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  country: string;
+  professional_title: string;
+  license_number: string;
+  years_experience: string;
+  specializations: string[];
+  cross_border_experience: boolean;
+  annual_clients: string | null;
+  languages: string[];
+  website: string | null;
+  practice_description: string | null;
+  referral_source: string | null;
+  status: string;
+}
+
 const STATUS_OPTIONS = ["new", "contacted", "in_progress", "converted", "lost"];
+const EXPERT_STATUS_OPTIONS = ["new", "under_review", "interview_scheduled", "approved", "rejected"];
 
 const STATUS_COLORS: Record<string, string> = {
   new: "bg-teal/10 text-teal border-teal/30",
@@ -42,6 +63,10 @@ const STATUS_COLORS: Record<string, string> = {
   in_progress: "bg-amber-500/10 text-amber-400 border-amber-500/30",
   converted: "bg-green-500/10 text-green-400 border-green-500/30",
   lost: "bg-gray-700/50 text-gray-400 border-gray-600",
+  under_review: "bg-blue-500/10 text-blue-400 border-blue-500/30",
+  interview_scheduled: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+  approved: "bg-green-500/10 text-green-400 border-green-500/30",
+  rejected: "bg-red-500/10 text-red-400 border-red-500/30",
 };
 
 /* ═══════════════════════ HELPERS ═══════════════════════ */
@@ -87,8 +112,9 @@ export default function AdminPage() {
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [carfLeads, setCARFLeads] = useState<CARFLead[]>([]);
+  const [expertApps, setExpertApps] = useState<ExpertApplication[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"onboarding" | "carf">(
+  const [activeTab, setActiveTab] = useState<"onboarding" | "carf" | "experts">(
     "onboarding"
   );
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
@@ -96,9 +122,10 @@ export default function AdminPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [leadsRes, carfRes] = await Promise.all([
+      const [leadsRes, carfRes, expertRes] = await Promise.all([
         fetch("/api/admin/leads"),
         fetch("/api/admin/carf-leads"),
+        fetch("/api/admin/expert-applications"),
       ]);
       if (leadsRes.ok) {
         const data = await leadsRes.json();
@@ -107,6 +134,10 @@ export default function AdminPage() {
       if (carfRes.ok) {
         const data = await carfRes.json();
         setCARFLeads(data.leads || []);
+      }
+      if (expertRes.ok) {
+        const data = await expertRes.json();
+        setExpertApps(data.leads || []);
       }
     } catch (err) {
       console.error("Failed to fetch:", err);
@@ -119,7 +150,7 @@ export default function AdminPage() {
   }, [authed, fetchData]);
 
   async function updateStatus(
-    table: "leads" | "carf_leads",
+    table: "leads" | "carf_leads" | "expert_applications",
     id: string,
     status: string
   ) {
@@ -133,8 +164,12 @@ export default function AdminPage() {
       setLeads((prev) =>
         prev.map((l) => (l.id === id ? { ...l, status } : l))
       );
-    } else {
+    } else if (table === "carf_leads") {
       setCARFLeads((prev) =>
+        prev.map((l) => (l.id === id ? { ...l, status } : l))
+      );
+    } else {
+      setExpertApps((prev) =>
         prev.map((l) => (l.id === id ? { ...l, status } : l))
       );
     }
@@ -207,7 +242,11 @@ export default function AdminPage() {
               <span className="text-white font-medium">
                 {carfLeads.length}
               </span>{" "}
-              CARF
+              CARF &middot;{" "}
+              <span className="text-white font-medium">
+                {expertApps.length}
+              </span>{" "}
+              expert applications
             </p>
           </div>
           <button
@@ -240,6 +279,16 @@ export default function AdminPage() {
             }`}
           >
             CARF Leads ({carfLeads.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("experts")}
+            className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors ${
+              activeTab === "experts"
+                ? "bg-navy-light text-teal border-b-2 border-teal"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            Expert Applications ({expertApps.length})
           </button>
         </div>
 
@@ -482,6 +531,155 @@ export default function AdminPage() {
                         </option>
                       ))}
                     </select>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Expert Applications ── */}
+        {activeTab === "experts" && (
+          <div>
+            <div className="flex justify-end mb-3">
+              <button
+                onClick={() =>
+                  exportCSV(
+                    ["Date", "Name", "Email", "Country", "Title", "Years Exp", "Specializations", "Cross-Border", "Status"],
+                    expertApps.map((l) => [
+                      formatDate(l.created_at),
+                      l.full_name,
+                      l.email,
+                      l.country,
+                      l.professional_title,
+                      l.years_experience,
+                      Array.isArray(l.specializations) ? l.specializations.join(", ") : "",
+                      l.cross_border_experience ? "Yes" : "No",
+                      l.status,
+                    ]),
+                    "expert_applications.csv"
+                  )
+                }
+                className="text-xs text-gray-400 hover:text-teal transition-colors"
+              >
+                Export CSV
+              </button>
+            </div>
+
+            {expertApps.length === 0 ? (
+              <div className="text-center py-16 text-gray-500">
+                <p>No expert applications yet</p>
+                <p className="text-xs mt-1">
+                  Applications will appear here when tax professionals apply via /experts/join
+                </p>
+              </div>
+            ) : (
+              <div className="bg-navy-light border border-gray-700 rounded-xl overflow-hidden">
+                {/* Header */}
+                <div className="hidden md:grid grid-cols-[120px_1fr_1fr_80px_120px_80px_140px] gap-2 px-4 py-2.5 text-xs text-gray-500 uppercase tracking-wider border-b border-gray-700/50">
+                  <span>Date</span>
+                  <span>Name</span>
+                  <span>Email</span>
+                  <span>Country</span>
+                  <span>Title</span>
+                  <span>Exp</span>
+                  <span>Status</span>
+                </div>
+
+                {expertApps.map((l) => (
+                  <div key={l.id} className="border-b border-gray-700/30 last:border-b-0">
+                    <div
+                      onClick={() =>
+                        setExpandedRow(expandedRow === l.id ? null : l.id)
+                      }
+                      className="grid md:grid-cols-[120px_1fr_1fr_80px_120px_80px_140px] gap-2 items-center px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                    >
+                      <span className="text-xs text-gray-500">
+                        {formatDate(l.created_at)}
+                      </span>
+                      <span className="text-sm text-gray-200 font-medium">
+                        {l.full_name}
+                      </span>
+                      <span className="text-sm text-gray-400">{l.email}</span>
+                      <span className="text-xs text-gray-400">{l.country}</span>
+                      <span className="text-xs text-gray-300 truncate">
+                        {l.professional_title}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {l.years_experience}
+                      </span>
+                      <select
+                        value={l.status}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          updateStatus("expert_applications", l.id, e.target.value);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className={`text-xs px-2 py-1 rounded border appearance-none cursor-pointer bg-transparent ${STATUS_COLORS[l.status] || STATUS_COLORS.new}`}
+                      >
+                        {EXPERT_STATUS_OPTIONS.map((s) => (
+                          <option key={s} value={s} className="bg-navy text-white">
+                            {s.replace(/_/g, " ")}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Expanded details */}
+                    {expandedRow === l.id && (
+                      <div className="px-4 pb-4 grid sm:grid-cols-2 gap-3 text-xs">
+                        <div className="bg-navy rounded-lg p-3 border border-gray-700/50">
+                          <span className="text-gray-500 block mb-1">Phone</span>
+                          <span className="text-gray-300">{l.phone || "—"}</span>
+                        </div>
+                        <div className="bg-navy rounded-lg p-3 border border-gray-700/50">
+                          <span className="text-gray-500 block mb-1">License / Registration</span>
+                          <span className="text-gray-300">{l.license_number}</span>
+                        </div>
+                        <div className="bg-navy rounded-lg p-3 border border-gray-700/50">
+                          <span className="text-gray-500 block mb-1">Cross-Border Experience</span>
+                          <span className="text-gray-300">{l.cross_border_experience ? "Yes" : "No"}</span>
+                        </div>
+                        <div className="bg-navy rounded-lg p-3 border border-gray-700/50">
+                          <span className="text-gray-500 block mb-1">Annual Clients</span>
+                          <span className="text-gray-300">{l.annual_clients || "—"}</span>
+                        </div>
+                        <div className="bg-navy rounded-lg p-3 border border-gray-700/50">
+                          <span className="text-gray-500 block mb-1">Specializations</span>
+                          <span className="text-gray-300">
+                            {Array.isArray(l.specializations) && l.specializations.length > 0
+                              ? l.specializations.join(", ")
+                              : "—"}
+                          </span>
+                        </div>
+                        <div className="bg-navy rounded-lg p-3 border border-gray-700/50">
+                          <span className="text-gray-500 block mb-1">Languages</span>
+                          <span className="text-gray-300">
+                            {Array.isArray(l.languages) && l.languages.length > 0
+                              ? l.languages.join(", ")
+                              : "—"}
+                          </span>
+                        </div>
+                        {l.website && (
+                          <div className="bg-navy rounded-lg p-3 border border-gray-700/50">
+                            <span className="text-gray-500 block mb-1">Website / LinkedIn</span>
+                            <span className="text-gray-300 break-all">{l.website}</span>
+                          </div>
+                        )}
+                        {l.referral_source && (
+                          <div className="bg-navy rounded-lg p-3 border border-gray-700/50">
+                            <span className="text-gray-500 block mb-1">Referral Source</span>
+                            <span className="text-gray-300">{l.referral_source}</span>
+                          </div>
+                        )}
+                        {l.practice_description && (
+                          <div className="bg-navy rounded-lg p-3 border border-gray-700/50 sm:col-span-2">
+                            <span className="text-gray-500 block mb-1">Practice Description</span>
+                            <span className="text-gray-300">{l.practice_description}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

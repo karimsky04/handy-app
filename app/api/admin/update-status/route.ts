@@ -9,17 +9,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    if (table !== "leads" && table !== "carf_leads") {
+    if (table !== "leads" && table !== "carf_leads" && table !== "expert_applications") {
       return NextResponse.json({ error: "Invalid table" }, { status: 400 });
     }
 
-    const validStatuses = [
-      "new",
-      "contacted",
-      "in_progress",
-      "converted",
-      "lost",
-    ];
+    const expertStatuses = ["new", "under_review", "interview_scheduled", "approved", "rejected"];
+    const leadStatuses = ["new", "contacted", "in_progress", "converted", "lost"];
+    const validStatuses = table === "expert_applications" ? expertStatuses : leadStatuses;
+
     if (!validStatuses.includes(status)) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }

@@ -216,6 +216,24 @@ export default function ExpertDashboard() {
         </div>
       </div>
 
+      {/* Referral Banner */}
+      <div className="mb-10 bg-gold/5 border border-gold/20 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-gray-200">
+            Know a great accountant?
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Help us grow the expert network and earn referral bonuses.
+          </p>
+        </div>
+        <a
+          href="/experts/join"
+          className="px-5 py-2.5 rounded-lg bg-gold/10 border border-gold/30 text-sm font-medium text-gold hover:bg-gold/20 transition-colors flex-shrink-0"
+        >
+          Refer an Expert &rarr;
+        </a>
+      </div>
+
       {/* Performance Snapshot */}
       <div>
         <h2 className="text-lg font-semibold mb-4">Performance Snapshot</h2>
