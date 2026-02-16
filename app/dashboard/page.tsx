@@ -36,19 +36,14 @@ const JURISDICTIONS: JurisdictionCard[] = [
     deadline: "31 January 2026",
     countdownText: "OVERDUE — 16 days",
     countdownColor: "text-red-400",
-    progress: 60,
+    progress: 65,
     tasks: [
-      { label: "Crypto report", status: "complete", detail: "Complete" },
-      {
-        label: "SA100 filing",
-        status: "in_progress",
-        detail: "With accountant",
-      },
-      {
-        label: "SA108 attachment",
-        status: "in_progress",
-        detail: "Pending review",
-      },
+      { label: "Crypto capital gains report", status: "complete", detail: "Complete" },
+      { label: "Stock & ETF gains (3 brokerages)", status: "complete", detail: "Complete" },
+      { label: "Self-employment income (HandyTax OÜ)", status: "in_progress", detail: "With accountant" },
+      { label: "SA100 Self Assessment", status: "in_progress", detail: "Pending review" },
+      { label: "SA108 (Capital Gains)", status: "complete", detail: "Ready" },
+      { label: "SA103 (Self-Employment)", status: "in_progress", detail: "In progress" },
     ],
     expert: "Sarah Mitchell",
     expertTitle: "ACCA — London",
@@ -65,21 +60,10 @@ const JURISDICTIONS: JurisdictionCard[] = [
     countdownColor: "text-amber-400",
     progress: 10,
     tasks: [
-      {
-        label: "Cerfa 2086 preparation",
-        status: "pending",
-        detail: "Not started",
-      },
-      {
-        label: "PFU calculation",
-        status: "pending",
-        detail: "Awaiting data",
-      },
-      {
-        label: "Treaty relief (UK-FR)",
-        status: "pending",
-        detail: "Pending",
-      },
+      { label: "Crypto PFU calculation (Cerfa 2086)", status: "pending", detail: "Not started" },
+      { label: "Stock portfolio gains declaration", status: "pending", detail: "Awaiting data" },
+      { label: "French employment income (6 months)", status: "pending", detail: "Pending" },
+      { label: "Treaty relief UK-FR (employment + capital gains)", status: "pending", detail: "Pending" },
     ],
     expert: "Pierre Dubois",
     expertTitle: "Expert-Comptable — Paris",
@@ -96,21 +80,11 @@ const JURISDICTIONS: JurisdictionCard[] = [
     countdownColor: "text-teal",
     progress: 35,
     tasks: [
-      {
-        label: "NHR status verification",
-        status: "complete",
-        detail: "Confirmed",
-      },
-      {
-        label: "Modelo 3 preparation",
-        status: "in_progress",
-        detail: "In progress",
-      },
-      {
-        label: "Crypto classification review",
-        status: "in_progress",
-        detail: "With expert",
-      },
+      { label: "NHR status verification", status: "complete", detail: "Confirmed" },
+      { label: "Modelo 3 preparation", status: "in_progress", detail: "In progress" },
+      { label: "Crypto classification review", status: "in_progress", detail: "With expert" },
+      { label: "Foreign employment income declaration", status: "pending", detail: "Pending" },
+      { label: "Estonian company (e-Residency) reporting", status: "pending", detail: "Under review" },
     ],
     expert: "Ana Santos",
     expertTitle: "TOC — Lisbon",
@@ -121,22 +95,27 @@ const JURISDICTIONS: JurisdictionCard[] = [
 const ACTIVITY = [
   {
     time: "Today",
-    text: "Sarah Mitchell uploaded revised SA108 for your review",
+    text: "Sarah Mitchell uploaded revised SA108 (crypto + stocks combined) for review",
+    urgent: true,
+  },
+  {
+    time: "Today",
+    text: "Sarah flagged potential overlap — stock gains during France residency period may be French-taxable",
     urgent: true,
   },
   {
     time: "Yesterday",
-    text: "Crypto reconciliation report updated — 24,847 of 25,102 transactions matched",
+    text: "Reconciliation complete — crypto (24,847 txns), stocks (342 trades), 3 employment payslips processed",
     urgent: false,
   },
   {
     time: "3 days ago",
-    text: "Pierre Dubois accepted your case — France filing can begin",
+    text: "Pierre Dubois accepted your case — requesting French employment contracts",
     urgent: false,
   },
   {
     time: "1 week ago",
-    text: "Your compliance map was generated",
+    text: "Ana Santos confirmed NHR status — Estonian company income eligible for exemption",
     urgent: false,
   },
 ];
@@ -329,12 +308,10 @@ export default function Dashboard() {
               <span className="text-lg flex-shrink-0">&#128276;</span>
               <div>
                 <h4 className="font-semibold text-amber-300 text-sm mb-1">
-                  Double Taxation Alert
+                  Multi-Asset Treaty Alert
                 </h4>
                 <p className="text-sm text-gray-400 leading-relaxed">
-                  Your UK and France obligations overlap for the 2023/24 tax
-                  year. Sarah and Pierre are coordinating to apply UK-France
-                  treaty relief. No action needed from you.
+                  Your UK, France, and Portugal obligations overlap across multiple income types. Sarah identified that stock gains realized during your French residency may fall under French PFU, not UK CGT. Pierre and Sarah are coordinating treaty relief across both capital gains AND employment income. Additionally, Ana is reviewing whether your Estonian company income qualifies for NHR exemption in Portugal.
                 </p>
               </div>
             </div>

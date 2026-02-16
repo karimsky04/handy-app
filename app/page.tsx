@@ -23,9 +23,10 @@ export default function Home() {
             Your Global Tax Compliance Platform
           </h1>
           <p className="mt-6 text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            Traded crypto across borders? Earned income in multiple countries?
-            Handy tells you exactly what you owe, where you owe it, and how to
-            stay compliant — so you never miss an obligation.
+            Living across borders? Trading crypto, holding investments, earning
+            income in multiple countries? Handy tells you exactly what you owe,
+            where you owe it, and how to stay compliant — so you never miss an
+            obligation.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -57,10 +58,11 @@ export default function Home() {
           </div>
           <div className="bg-navy-light rounded-xl p-6 border border-gray-800">
             <div className="text-teal text-2xl mb-3">&#9670;</div>
-            <h3 className="font-semibold text-lg mb-2">Crypto-First</h3>
+            <h3 className="font-semibold text-lg mb-2">Every Income Type</h3>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Built for the complexity of digital assets — staking rewards,
-              DeFi, NFTs, cross-chain swaps. We speak your language.
+              Crypto, stocks, employment, self-employment, property, pensions
+              — we handle every income type across every jurisdiction. Your
+              complete financial picture in one place.
             </p>
           </div>
           <div className="bg-navy-light rounded-xl p-6 border border-gray-800">

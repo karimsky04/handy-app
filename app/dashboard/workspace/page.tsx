@@ -67,50 +67,38 @@ const JURISDICTIONS: JurisdictionData[] = [
     country: "United Kingdom",
     expert: "Sarah Mitchell",
     filingTitle: "United Kingdom — 2024/25 Filing",
-    statusLabel: "In Progress — 60% Complete",
-    progress: 60,
+    statusLabel: "In Progress — 65% Complete",
+    progress: 65,
     sections: [
       {
         title: "Data Collection",
         status: "complete",
         statusLabel: "Complete",
         items: [
-          {
-            status: "complete",
-            label:
-              "Exchange data imported (Binance, Coinbase, Kraken + 28 others)",
-          },
-          {
-            status: "complete",
-            label: "Wallet addresses verified (31 wallets connected)",
-          },
-          {
-            status: "complete",
-            label:
-              "Cost basis methodology confirmed (Average cost — HMRC compliant)",
-          },
+          { status: "complete", label: "Crypto exchange data imported (Binance, Coinbase, Kraken + 28 others)" },
+          { status: "complete", label: "Crypto wallet addresses verified (31 wallets)" },
+          { status: "complete", label: "Brokerage accounts connected (Interactive Brokers, Trading 212, Hargreaves Lansdown)" },
+          { status: "complete", label: "Employment payslips uploaded (UK employer — 4 months)" },
+          { status: "complete", label: "Self-employment records imported (HandyTax OÜ — Estonian e-Residency)" },
         ],
       },
       {
-        title: "Reconciliation",
+        title: "Reconciliation & Classification",
         status: "complete",
         statusLabel: "Complete",
         items: [
-          {
-            status: "complete",
-            label: "Transaction matching: 24,847 of 25,102 matched (98.9%)",
-          },
+          { status: "complete", label: "Crypto transaction matching: 24,847 of 25,102 matched (98.9%)" },
           {
             status: "warning",
-            label: "255 transactions flagged for manual review",
+            label: "255 crypto transactions flagged for manual review",
             expandable: true,
             expandedText:
               "Inter-wallet transfers misidentified as disposals. Sarah is reviewing these to confirm they are non-taxable transfers, not sales.",
           },
-          {
-            status: "complete",
-            label: "DeFi transaction classification complete",
-          },
+          { status: "complete", label: "Stock trades reconciled: 342 trades across 3 brokerages" },
+          { status: "complete", label: "Dividend income classified: £1,240 (UK allowance: £1,000 — £240 taxable)" },
+          { status: "complete", label: "Employment income split: UK (Jan-Apr), France (May-Oct), Portugal (Nov-Dec)" },
+          { status: "complete", label: "Self-employment income: €18,400 from HandyTax OÜ" },
         ],
       },
       {
@@ -118,26 +106,22 @@ const JURISDICTIONS: JurisdictionData[] = [
         status: "complete",
         statusLabel: "Complete",
         items: [
-          { status: "complete", label: "Capital gains summary generated" },
-          {
-            status: "complete",
-            label:
-              "Income categorization (staking, mining, airdrops) complete",
-          },
-          { status: "complete", label: "SA108 attachment prepared" },
+          { status: "complete", label: "Crypto capital gains summary: £6,847 gains" },
+          { status: "complete", label: "Stock capital gains summary: £4,230 gains" },
+          { status: "complete", label: "Combined CGT calculation: £11,077 total gains, £3,000 allowance = £8,077 taxable" },
+          { status: "complete", label: "Employment income summary: £28,450 (UK portion)" },
+          { status: "complete", label: "Self-employment income summary: £15,870 (converted from EUR)" },
+          { status: "complete", label: "SA108 (Capital Gains) prepared" },
+          { status: "complete", label: "SA103 (Self-Employment) prepared" },
           {
             status: "complete",
             label: "",
             downloads: [
-              {
-                label: "Capital Gains Report",
-                filename: "Capital_Gains_Summary_2024-25.pdf",
-              },
-              { label: "SA108 Data", filename: "SA108_Final_Review.pdf" },
-              {
-                label: "Full Transaction Log",
-                filename: "Full_Transaction_Log.csv",
-              },
+              { label: "Crypto Gains Report", filename: "Crypto_Gains_Summary_2024-25.pdf" },
+              { label: "Stock Gains Report", filename: "Stock_Gains_Summary_2024-25.pdf" },
+              { label: "Combined CGT Summary", filename: "Combined_CGT_Summary_2024-25.pdf" },
+              { label: "Employment Income Summary", filename: "Employment_Income_Summary_2024-25.pdf" },
+              { label: "Self-Employment Accounts", filename: "Self_Employment_Accounts_2024-25.pdf" },
             ],
           },
         ],
@@ -147,37 +131,28 @@ const JURISDICTIONS: JurisdictionData[] = [
         status: "in_progress",
         statusLabel: "In Progress",
         items: [
-          {
-            status: "in_progress",
-            label: "SA100 being prepared by Sarah Mitchell",
-          },
-          {
-            status: "pending",
-            label: "HMRC submission — awaiting final review",
-          },
-          { status: "pending", label: "Payment reference generation" },
+          { status: "in_progress", label: "SA100 being compiled by Sarah Mitchell" },
+          { status: "pending", label: "HMRC submission — awaiting final review" },
           {
             status: "complete",
             label: "",
-            note: "I've prepared the SA100 incorporating your crypto gains and staking income. Please review the summary below and approve so I can submit to HMRC. Note: the 255 flagged transactions were confirmed as wallet transfers — no tax impact. Final CGT liability: £3,847.",
+            note: "Michael, I've compiled your SA100 incorporating all income streams: crypto gains (£6,847), stock gains (£4,230), UK employment (£28,450), and self-employment (£15,870). Combined CGT after allowance is £8,077. I'm coordinating with Pierre on the split-year treatment for your employment income — we need to confirm exactly which months' salary is UK-taxable vs French-taxable. I'll have the final figures by Thursday.",
           },
         ],
       },
       {
-        title: "Treaty Coordination",
+        title: "Cross-Jurisdiction Coordination",
         status: "in_progress",
-        statusLabel: "Pending",
+        statusLabel: "Active",
         items: [
-          {
-            status: "pending",
-            label:
-              "UK-France double taxation relief — coordinating with Pierre Dubois",
-          },
+          { status: "in_progress", label: "UK-France split-year employment allocation — Sarah & Pierre coordinating" },
+          { status: "in_progress", label: "UK-France capital gains treaty analysis — determining primary taxing rights on stocks sold during transition" },
+          { status: "pending", label: "UK-Portugal self-employment — Ana reviewing NHR implications for Estonian company distributions" },
           {
             status: "pending",
             label: "",
             infoBox:
-              "Sarah has flagged that some gains realized during your split-year may be subject to French PFU. She's coordinating with Pierre to determine which jurisdiction has primary taxing rights under the UK-France treaty.",
+              "Three active coordination threads between your experts. Sarah is lead coordinator for your case. Current focus: determining the exact split of your employment income between UK and France, which affects both jurisdictions' tax calculations.",
           },
         ],
       },
@@ -187,40 +162,56 @@ const JURISDICTIONS: JurisdictionData[] = [
         sender: "Sarah Mitchell",
         initials: "SM",
         time: "2 hours ago",
-        text: "Hi Michael, I've reviewed all 255 flagged transactions. They're all inter-wallet transfers — no taxable events. Your final CGT liability is £3,847 after the £3,000 annual allowance. I've attached the revised SA108 for your review.",
+        text: "Hi Michael, I've combined your crypto and stock gains into a single CGT calculation. Total taxable gains are £8,077 after the annual allowance. I'm now working on the employment income split — I need Pierre to confirm the French tax year dates for your employment contract.",
       },
       {
         sender: "Michael",
         isClient: true,
         time: "1 hour ago",
-        text: "Thanks Sarah! That's less than I expected. Quick question — does this include the staking rewards from my Ethereum validator?",
+        text: "Thanks Sarah! My French contract started May 1st. Does the self-employment income from my Estonian company complicate things?",
       },
       {
         sender: "Sarah Mitchell",
         initials: "SM",
         time: "45 min ago",
-        text: "Yes, the staking rewards (£2,340) are included as miscellaneous income on the SA100. They're taxed as income, not capital gains. I've broken this down in the summary PDF.",
+        text: "Good question. The Estonian company income is interesting — since you're now Portuguese tax resident with NHR status, Ana thinks it may be exempt from Portuguese tax entirely. I've looped her in. For UK purposes, I'm treating it as self-employment income for the months you were UK resident. I've prepared the SA103 accordingly.",
       },
       {
         sender: "System",
         isSystem: true,
         time: "30 min ago",
-        text: "Sarah Mitchell uploaded: SA108_Final_Review.pdf",
+        text: "Sarah Mitchell uploaded: Combined_CGT_Summary_2024-25.pdf",
+      },
+      {
+        sender: "System",
+        isSystem: true,
+        time: "20 min ago",
+        text: "🔄 Cross-jurisdiction update: Pierre Dubois confirmed French employment period as May 1 - October 31, 2024",
       },
     ],
     documents: [
       {
-        name: "Capital_Gains_Summary_2024-25.pdf",
+        name: "Crypto_Gains_Summary_2024-25.pdf",
         source: "Generated by Handy",
         date: "Feb 14",
       },
       {
-        name: "SA108_Final_Review.pdf",
+        name: "Stock_Gains_Summary_2024-25.pdf",
+        source: "Generated by Handy",
+        date: "Feb 13",
+      },
+      {
+        name: "Combined_CGT_Summary_2024-25.pdf",
         source: "Uploaded by Sarah Mitchell",
         date: "Today",
       },
       {
-        name: "Staking_Income_Breakdown.pdf",
+        name: "Self_Employment_Accounts_2024-25.pdf",
+        source: "Generated by Handy",
+        date: "Feb 14",
+      },
+      {
+        name: "Employment_Income_Summary_2024-25.pdf",
         source: "Generated by Handy",
         date: "Feb 12",
       },
@@ -229,25 +220,20 @@ const JURISDICTIONS: JurisdictionData[] = [
         source: "Generated by Handy",
         date: "Feb 10",
       },
-      {
-        name: "Cost_Basis_Methodology_Note.pdf",
-        source: "Uploaded by Sarah Mitchell",
-        date: "Feb 8",
-      },
     ],
     approval: {
       title: "SA100 Tax Return — Ready for your review",
       description:
-        "Sarah Mitchell has prepared your Self Assessment return. Review the summary and approve for submission to HMRC.",
+        "Sarah Mitchell has prepared your Self Assessment return incorporating all income streams. Review the summary and approve for submission to HMRC.",
       summary: [
-        { label: "Total income", value: "£67,450" },
-        { label: "Capital gains", value: "£6,847" },
-        { label: "CGT after allowance", value: "£3,847" },
-        { label: "Tax owed", value: "£1,539" },
+        { label: "Total income", value: "£44,320" },
+        { label: "Capital gains (crypto + stocks)", value: "£11,077" },
+        { label: "CGT after allowance", value: "£8,077" },
+        { label: "Self-employment", value: "£15,870" },
       ],
     },
     crossNote:
-      "This workspace syncs relevant data with your France and Portugal workspaces. When Sarah confirms UK departure date, Pierre's France workspace automatically updates the French residency start date.",
+      "This workspace syncs relevant data with your France and Portugal workspaces. Sarah is coordinating the employment income split with Pierre, and the self-employment NHR treatment with Ana. Changes propagate automatically.",
   },
   {
     code: "FR",

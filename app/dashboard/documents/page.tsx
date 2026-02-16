@@ -41,9 +41,15 @@ const FR = { flag: "🇫🇷", code: "FR", label: "France" };
 const PT = { flag: "🇵🇹", code: "PT", label: "Portugal" };
 const ALL = { flag: "🌐", code: "ALL", label: "All" };
 
+const UKFR = [UK, FR];
+
 const DOCUMENTS: Document[] = [
   // Tax Reports
   { name: "Capital_Gains_Summary_2024-25.pdf", jurisdictions: [UK], date: "Feb 14, 2026", sortDate: 20260214, uploadedBy: "Handy (auto-generated)", status: "final", type: "tax_report", canView: true, canApprove: false },
+  { name: "Stock_Gains_Summary_2024-25.pdf", jurisdictions: [UK], date: "Feb 13, 2026", sortDate: 20260213.5, uploadedBy: "Handy (auto-generated)", status: "final", type: "tax_report", canView: true, canApprove: false },
+  { name: "Combined_CGT_Summary_2024-25.pdf", jurisdictions: [UK], date: "Today", sortDate: 20260216.1, uploadedBy: "Sarah Mitchell", status: "pending_approval", type: "tax_report", canView: true, canApprove: true },
+  { name: "Self_Employment_Accounts_2024-25.pdf", jurisdictions: [UK], date: "Feb 14, 2026", sortDate: 20260214.1, uploadedBy: "Handy (auto-generated)", status: "final", type: "tax_report", canView: true, canApprove: false },
+  { name: "Employment_Income_Split_Analysis.pdf", jurisdictions: UKFR, date: "Feb 15, 2026", sortDate: 20260215.1, uploadedBy: "Sarah Mitchell & Pierre Dubois", status: "in_progress", type: "tax_report", canView: true, canApprove: false },
   { name: "SA108_Final_Review.pdf", jurisdictions: [UK], date: "Today", sortDate: 20260216, uploadedBy: "Sarah Mitchell", status: "pending_approval", type: "tax_report", canView: true, canApprove: true },
   { name: "Staking_Income_Breakdown.pdf", jurisdictions: [UK], date: "Feb 12, 2026", sortDate: 20260212, uploadedBy: "Handy (auto-generated)", status: "final", type: "tax_report", canView: true, canApprove: false },
   { name: "Full_Transaction_Log.csv", jurisdictions: [UK], date: "Feb 10, 2026", sortDate: 20260210, uploadedBy: "Handy (auto-generated)", status: "final", type: "tax_report", canView: false, canApprove: false },
@@ -54,16 +60,23 @@ const DOCUMENTS: Document[] = [
   { name: "Binance_Trade_History_2024.csv", jurisdictions: [UK], date: "Feb 1, 2026", sortDate: 20260201, uploadedBy: "Michael (you)", status: "processed", type: "source_data", canView: false, canApprove: false },
   { name: "Coinbase_Transactions_2024.csv", jurisdictions: [UK], date: "Feb 1, 2026", sortDate: 20260201.1, uploadedBy: "Michael (you)", status: "processed", type: "source_data", canView: false, canApprove: false },
   { name: "Kraken_Ledger_Export.csv", jurisdictions: [UK], date: "Feb 1, 2026", sortDate: 20260201.2, uploadedBy: "Michael (you)", status: "processed", type: "source_data", canView: false, canApprove: false },
+  { name: "Interactive_Brokers_Annual_Statement.pdf", jurisdictions: [UK], date: "Feb 1, 2026", sortDate: 20260201.3, uploadedBy: "Michael (you)", status: "processed", type: "source_data", canView: false, canApprove: false },
+  { name: "Trading212_Transaction_History.csv", jurisdictions: [UK], date: "Feb 1, 2026", sortDate: 20260201.4, uploadedBy: "Michael (you)", status: "processed", type: "source_data", canView: false, canApprove: false },
   { name: "DeFi_Wallet_0x8f3...a2b_history.json", jurisdictions: [UK], date: "Feb 2, 2026", sortDate: 20260202, uploadedBy: "Handy (auto-imported)", status: "processed", type: "source_data", canView: false, canApprove: false },
+  { name: "UK_Employment_Payslips_Jan-Apr.pdf", jurisdictions: [UK], date: "Feb 3, 2026", sortDate: 20260203, uploadedBy: "Michael (you)", status: "processed", type: "source_data", canView: false, canApprove: false },
+  { name: "HandyTax_OÜ_Annual_Accounts.pdf", jurisdictions: [PT], date: "Feb 4, 2026", sortDate: 20260204, uploadedBy: "Michael (you)", status: "processed", type: "source_data", canView: false, canApprove: false },
+  { name: "French_Employment_Contract.pdf", jurisdictions: [FR], date: "Feb 5, 2026", sortDate: 20260205.1, uploadedBy: "Michael (you)", status: "processed", type: "source_data", canView: false, canApprove: false },
   { name: "French_Bank_Statement_2024.pdf", jurisdictions: [FR], date: "Feb 5, 2026", sortDate: 20260205, uploadedBy: "Michael (you)", status: "under_review", type: "source_data", canView: false, canApprove: false },
 
   // Expert Communications
   { name: "Cost_Basis_Methodology_Note.pdf", jurisdictions: [UK], date: "Feb 8, 2026", sortDate: 20260208.1, uploadedBy: "Sarah Mitchell", status: "reviewed", type: "expert_comms", canView: true, canApprove: false },
-  { name: "UK_France_Treaty_Analysis.pdf", jurisdictions: [UK, FR], date: "Feb 13, 2026", sortDate: 20260213, uploadedBy: "Sarah Mitchell & Pierre Dubois", status: "in_progress", type: "expert_comms", canView: true, canApprove: false },
+  { name: "Split_Year_Treatment_Analysis.pdf", jurisdictions: UKFR, date: "Feb 14, 2026", sortDate: 20260214.2, uploadedBy: "Sarah Mitchell", status: "draft", type: "expert_comms", canView: true, canApprove: false },
+  { name: "UK_France_Treaty_Analysis.pdf", jurisdictions: UKFR, date: "Feb 13, 2026", sortDate: 20260213, uploadedBy: "Sarah Mitchell & Pierre Dubois", status: "in_progress", type: "expert_comms", canView: true, canApprove: false },
+  { name: "NHR_Estonian_Company_Assessment.pdf", jurisdictions: [PT], date: "Feb 12, 2026", sortDate: 20260212.1, uploadedBy: "Ana Santos", status: "final", type: "expert_comms", canView: true, canApprove: false },
   { name: "Portugal_NHR_Eligibility_Review.pdf", jurisdictions: [PT], date: "Feb 6, 2026", sortDate: 20260206, uploadedBy: "Ana Santos", status: "final", type: "expert_comms", canView: true, canApprove: false },
 
   // Compliance Records
-  { name: "Compliance_Map_Generated_Feb2026.pdf", jurisdictions: [ALL], date: "Feb 1, 2026", sortDate: 20260201.3, uploadedBy: "Handy (auto-generated)", status: "archived", type: "compliance", canView: false, canApprove: false },
+  { name: "Compliance_Map_Generated_Feb2026.pdf", jurisdictions: [ALL], date: "Feb 1, 2026", sortDate: 20260201.5, uploadedBy: "Handy (auto-generated)", status: "archived", type: "compliance", canView: false, canApprove: false },
   { name: "HMRC_Submission_Receipt.pdf", jurisdictions: [UK], date: "Pending", sortDate: 20260217, uploadedBy: "—", status: "awaiting", type: "compliance", canView: false, canApprove: false },
   { name: "Data_Processing_Consent.pdf", jurisdictions: [ALL], date: "Jan 30, 2026", sortDate: 20260130, uploadedBy: "Michael (you)", status: "signed", type: "compliance", canView: false, canApprove: false },
 ];
