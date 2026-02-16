@@ -591,7 +591,7 @@ export default function StepResults({ data, onBack }: Props) {
     ...data.previousCountries.map((pc) => pc.country),
   ].filter(Boolean);
 
-  const uniqueCodes = [...new Set(allCountryCodes)];
+  const uniqueCodes = Array.from(new Set(allCountryCodes));
 
   const results: CountryResult[] = uniqueCodes.map((code) => {
     const country = COUNTRIES.find((c) => c.code === code);
