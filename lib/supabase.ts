@@ -16,12 +16,17 @@ export function getSupabase(): SupabaseClient {
   return _supabase;
 }
 
-// Browser client with auth cookie handling (for client components)
-// Fallback values are used during Next.js static generation — the client is
-// never actually called at build time (hooks only run in the browser).
+// Browser client with auth cookie handling (for client components).
+// Singleton — ensures one shared instance so the auth session is never lost
+// when navigating between /expert and /platform-admin.
+let _browserClient: ReturnType<typeof createBrowserClient> | null = null;
+
 export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder"
-  );
+  if (!_browserClient) {
+    _browserClient = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co",
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder"
+    );
+  }
+  return _browserClient;
 }

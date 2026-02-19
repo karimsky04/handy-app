@@ -69,7 +69,7 @@ export function useClientsData() {
       return;
     }
 
-    const clientIds = ceRows.map((ce) => (ce.client as unknown as Client).id);
+    const clientIds = ceRows.map((ce: Record<string, unknown>) => (ce.client as unknown as Client).id);
 
     // Fetch all experts for these clients
     const { data: allCeRows } = await supabase
@@ -87,7 +87,7 @@ export function useClientsData() {
       string,
       { total: number; completed: number }
     > = {};
-    (tasks ?? []).forEach((t) => {
+    (tasks ?? []).forEach((t: Record<string, string>) => {
       if (!tasksByClient[t.client_id]) {
         tasksByClient[t.client_id] = { total: 0, completed: 0 };
       }
@@ -95,14 +95,14 @@ export function useClientsData() {
       if (t.status === "completed") tasksByClient[t.client_id].completed++;
     });
 
-    const result: ClientWithDetails[] = ceRows.map((ce) => {
+    const result: ClientWithDetails[] = ceRows.map((ce: Record<string, unknown>) => {
       const client = ce.client as unknown as Client;
       const clientId = client.id;
 
       // Build experts list for this client
       const otherExperts = (allCeRows ?? [])
-        .filter((r) => r.client_id === clientId)
-        .map((r) => ({
+        .filter((r: Record<string, unknown>) => r.client_id === clientId)
+        .map((r: Record<string, unknown>) => ({
           name:
             r.expert_id === expert.id
               ? "You"

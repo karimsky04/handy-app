@@ -42,7 +42,7 @@ export function useDashboardStats() {
           .eq("expert_id", expert!.id);
 
         const jurisdictions = new Set(
-          jurisdictionRows?.map((r) => r.jurisdiction) ?? []
+          jurisdictionRows?.map((r: Record<string, string>) => r.jurisdiction) ?? []
         ).size;
 
         // Earnings this quarter
@@ -59,7 +59,7 @@ export function useDashboardStats() {
           .gte("paid_at", quarterStart.toISOString());
 
         const earnedThisQuarter =
-          payments?.reduce((sum, p) => sum + p.amount, 0) ?? 0;
+          payments?.reduce((sum: number, p: Record<string, number>) => sum + p.amount, 0) ?? 0;
 
         if (!cancelled) {
           setStats({
@@ -134,13 +134,13 @@ export function useUrgentTasks() {
           .order("due_date", { ascending: true });
 
         if (!cancelled) {
-          const mapped: UrgentTask[] = (data ?? []).map((t) => ({
+          const mapped: UrgentTask[] = (data ?? []).map((t: { id: string; title: string; status: string; due_date: string | null; client: unknown }) => ({
             id: t.id,
             title: t.title,
             status: t.status,
             due_date: t.due_date,
             client_name:
-              (t.client as unknown as { full_name: string })?.full_name ??
+              (t.client as { full_name: string })?.full_name ??
               "Unknown",
             is_overdue: t.due_date ? new Date(t.due_date) < now : false,
           }));
@@ -224,7 +224,7 @@ export function useMonthlyEarnings() {
             grouped[key] = 0;
           }
 
-          (data ?? []).forEach((p) => {
+          (data ?? []).forEach((p: { amount: number; paid_at: string }) => {
             const d = new Date(p.paid_at);
             const key = `${d.getFullYear()}-${d.getMonth()}`;
             if (key in grouped) {
