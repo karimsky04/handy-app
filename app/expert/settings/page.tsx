@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useExpert } from "@/lib/context/expert-auth-context";
+import { createClient } from "@/lib/supabase";
 
 /* ═══════════════════════ TYPES ═══════════════════════ */
 
@@ -13,6 +15,16 @@ type Section =
   | "agreement";
 
 /* ═══════════════════════ HELPERS ═══════════════════════ */
+
+function getInitials(fullName: string): string {
+  return fullName
+    .split(" ")
+    .map((w) => w[0])
+    .filter(Boolean)
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
 
 function Toggle({
   on,
@@ -92,9 +104,105 @@ function Checkbox({
   );
 }
 
+function SkeletonBlock({ className = "" }: { className?: string }) {
+  return (
+    <div
+      className={`animate-pulse bg-gray-700/40 rounded-lg ${className}`}
+    />
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <SkeletonBlock className="h-6 w-32 mb-2" />
+        <SkeletonBlock className="h-4 w-64 mb-6" />
+      </div>
+      <div className="flex items-center gap-4 mb-6">
+        <SkeletonBlock className="w-16 h-16 rounded-full" />
+        <div className="space-y-2">
+          <SkeletonBlock className="h-4 w-24" />
+          <SkeletonBlock className="h-3 w-32" />
+        </div>
+      </div>
+      <div className="space-y-4 max-w-lg">
+        {[...Array(5)].map((_, i) => (
+          <div key={i}>
+            <SkeletonBlock className="h-3 w-20 mb-1.5" />
+            <SkeletonBlock className="h-10 w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ═══════════════════════ SECTIONS ═══════════════════════ */
 
 function ProfileSection() {
+  const { expert, loading } = useExpert();
+  const supabase = createClient();
+
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [company, setCompany] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  // Sync local state when expert data loads or changes
+  useEffect(() => {
+    if (expert) {
+      setFullName(expert.full_name ?? "");
+      setPhone(expert.phone ?? "");
+      setCompany(expert.company ?? "");
+    }
+  }, [expert]);
+
+  if (loading) return <LoadingSkeleton />;
+  if (!expert) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-400">
+          Unable to load profile. Please sign in again.
+        </p>
+      </div>
+    );
+  }
+
+  const initials = getInitials(expert.full_name);
+
+  async function handleSave() {
+    if (!expert) return;
+    setSaving(true);
+    setFeedback(null);
+
+    const { error } = await supabase
+      .from("experts")
+      .update({
+        full_name: fullName.trim(),
+        phone: phone.trim() || null,
+        company: company.trim() || null,
+      })
+      .eq("id", expert.id);
+
+    setSaving(false);
+
+    if (error) {
+      setFeedback({
+        type: "error",
+        message: "Failed to save changes. Please try again.",
+      });
+    } else {
+      setFeedback({ type: "success", message: "Profile updated successfully." });
+      // Auto-dismiss success message after 4 seconds
+      setTimeout(() => setFeedback(null), 4000);
+    }
+  }
+
   return (
     <div>
       <h2 className="text-xl font-bold mb-1">Profile</h2>
@@ -105,61 +213,109 @@ function ProfileSection() {
       {/* Avatar */}
       <div className="flex items-center gap-4 mb-6">
         <div className="w-16 h-16 rounded-full bg-gold/20 border-2 border-gold/30 flex items-center justify-center text-gold text-xl font-bold relative group cursor-pointer">
-          SM
+          {initials}
           <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
             <span className="text-[10px] text-white font-medium">Change</span>
           </div>
         </div>
         <div>
           <p className="text-sm text-gray-200 font-medium">Profile photo</p>
-          <p className="text-xs text-gray-500">
-            JPG or PNG, max 2MB
-          </p>
+          <p className="text-xs text-gray-500">JPG or PNG, max 2MB</p>
         </div>
       </div>
 
       <div className="space-y-4 max-w-lg">
+        {/* Full name — editable */}
         <div>
           <label className="text-xs text-gray-500 block mb-1.5">
             Full name
           </label>
           <input
-            defaultValue="Sarah Mitchell"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
             className="w-full bg-navy border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold/50 transition-colors"
           />
         </div>
+
+        {/* Email — read-only */}
         <div>
-          <label className="text-xs text-gray-500 block mb-1.5">
-            Professional title
-          </label>
+          <label className="text-xs text-gray-500 block mb-1.5">Email</label>
           <input
-            defaultValue="ACCA Chartered Accountant"
-            className="w-full bg-navy border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold/50 transition-colors"
+            value={expert.email}
+            readOnly
+            className="w-full bg-navy border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-gray-400 focus:outline-none cursor-not-allowed"
           />
         </div>
+
+        {/* Phone — editable */}
+        <div>
+          <label className="text-xs text-gray-500 block mb-1.5">Phone</label>
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Enter your phone number"
+            className="w-full bg-navy border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-gold/50 transition-colors"
+          />
+        </div>
+
+        {/* Company — editable */}
+        <div>
+          <label className="text-xs text-gray-500 block mb-1.5">Company</label>
+          <input
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
+            placeholder="Enter your company name"
+            className="w-full bg-navy border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-gold/50 transition-colors"
+          />
+        </div>
+
+        {/* Jurisdictions — read-only chips */}
         <div>
           <label className="text-xs text-gray-500 block mb-1.5">
-            License / Registration number
+            Jurisdictions
           </label>
-          <div className="flex items-center gap-2">
-            <input
-              defaultValue="ACCA #2847193"
-              className="flex-1 bg-navy border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold/50 transition-colors"
-            />
-            <span className="flex items-center gap-1 px-2.5 py-2 rounded-lg bg-teal/10 border border-teal/30 text-teal text-xs font-medium flex-shrink-0">
-              ✅ Verified
-            </span>
+          <div className="flex flex-wrap gap-2">
+            {expert.jurisdictions.length > 0 ? (
+              expert.jurisdictions.map((j) => (
+                <span
+                  key={j}
+                  className="text-xs text-teal bg-teal/10 border border-teal/30 px-2.5 py-1 rounded-full"
+                >
+                  {j}
+                </span>
+              ))
+            ) : (
+              <span className="text-xs text-gray-500">
+                No jurisdictions set
+              </span>
+            )}
           </div>
         </div>
+
+        {/* Specializations — read-only chips */}
         <div>
           <label className="text-xs text-gray-500 block mb-1.5">
-            Location
+            Specializations
           </label>
-          <input
-            defaultValue="London, United Kingdom"
-            className="w-full bg-navy border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold/50 transition-colors"
-          />
+          <div className="flex flex-wrap gap-2">
+            {expert.specializations.length > 0 ? (
+              expert.specializations.map((s) => (
+                <span
+                  key={s}
+                  className="text-xs text-gold bg-gold/10 border border-gold/30 px-2.5 py-1 rounded-full"
+                >
+                  {s}
+                </span>
+              ))
+            ) : (
+              <span className="text-xs text-gray-500">
+                No specializations set
+              </span>
+            )}
+          </div>
         </div>
+
+        {/* Languages */}
         <div>
           <label className="text-xs text-gray-500 block mb-1.5">
             Languages
@@ -173,22 +329,28 @@ function ProfileSection() {
             <Checkbox checked={false} label="Other" />
           </div>
         </div>
+
+        {/* Bio */}
         <div>
           <label className="text-xs text-gray-500 block mb-1.5">Bio</label>
           <textarea
-            defaultValue="Chartered accountant with 8 years' experience in international tax, specialising in cryptocurrency taxation, cross-border capital gains, and multi-jurisdiction compliance. Previously at Deloitte (4 years) before establishing independent practice."
+            defaultValue=""
+            placeholder="Write a short professional bio..."
             rows={4}
-            className="w-full bg-navy border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold/50 transition-colors resize-none"
+            className="w-full bg-navy border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-gold/50 transition-colors resize-none"
           />
         </div>
+
+        {/* Website & LinkedIn */}
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="text-xs text-gray-500 block mb-1.5">
               Website
             </label>
             <input
-              defaultValue="www.mitchelltax.co.uk"
-              className="w-full bg-navy border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold/50 transition-colors"
+              defaultValue=""
+              placeholder="www.example.com"
+              className="w-full bg-navy border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-gold/50 transition-colors"
             />
           </div>
           <div>
@@ -196,16 +358,34 @@ function ProfileSection() {
               LinkedIn
             </label>
             <input
-              defaultValue="linkedin.com/in/sarah-mitchell-acca"
-              className="w-full bg-navy border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold/50 transition-colors"
+              defaultValue=""
+              placeholder="linkedin.com/in/yourname"
+              className="w-full bg-navy border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-gold/50 transition-colors"
             />
           </div>
         </div>
       </div>
 
+      {/* Feedback message */}
+      {feedback && (
+        <div
+          className={`mt-4 max-w-lg px-4 py-2.5 rounded-lg text-sm font-medium ${
+            feedback.type === "success"
+              ? "bg-teal/10 border border-teal/30 text-teal"
+              : "bg-red-500/10 border border-red-500/30 text-red-400"
+          }`}
+        >
+          {feedback.message}
+        </div>
+      )}
+
       <div className="flex items-center gap-4 mt-6">
-        <button className="px-6 py-2.5 bg-gold text-navy font-semibold rounded-lg hover:bg-gold-light transition-colors text-sm">
-          Save Changes
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-6 py-2.5 bg-gold text-navy font-semibold rounded-lg hover:bg-gold-light transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? "Saving..." : "Save Changes"}
         </button>
         <button className="text-sm text-gray-400 hover:text-gray-300 transition-colors">
           See how clients see your profile &rarr;
@@ -216,6 +396,36 @@ function ProfileSection() {
 }
 
 function SpecializationsSection() {
+  const { expert, loading } = useExpert();
+
+  if (loading) return <LoadingSkeleton />;
+
+  const expertJurisdictions = expert?.jurisdictions ?? [];
+  const expertSpecializations = expert?.specializations ?? [];
+
+  // Common jurisdiction list — mark expert's as checked
+  const allJurisdictions = [
+    "United Kingdom",
+    "Ireland",
+    "United States",
+    "Canada",
+    "Australia",
+    "Germany",
+    "France",
+    "Netherlands",
+  ];
+
+  // Common specialization / asset-type list — mark expert's as checked
+  const allAssetTypes = [
+    "Cryptocurrency & digital assets",
+    "Stocks, ETFs & investment portfolios",
+    "Self-employment & freelance",
+    "Employment income (multi-country)",
+    "Rental property & real estate",
+    "Pensions & retirement",
+    "Business / corporate tax",
+  ];
+
   return (
     <div>
       <h2 className="text-xl font-bold mb-1">Your Expertise</h2>
@@ -229,11 +439,21 @@ function SpecializationsSection() {
           Jurisdictions covered
         </h3>
         <div className="space-y-1">
-          <Checkbox checked={true} label="United Kingdom" badge="Primary" />
-          <Checkbox checked={true} label="Ireland" badge="Secondary" />
-          <Checkbox checked={false} label="United States" />
-          <Checkbox checked={false} label="Canada" />
-          <Checkbox checked={false} label="Australia" />
+          {allJurisdictions.map((j) => (
+            <Checkbox
+              key={j}
+              checked={expertJurisdictions.some(
+                (ej) => ej.toLowerCase() === j.toLowerCase()
+              )}
+              label={j}
+              badge={
+                expertJurisdictions.length > 0 &&
+                expertJurisdictions[0]?.toLowerCase() === j.toLowerCase()
+                  ? "Primary"
+                  : undefined
+              }
+            />
+          ))}
         </div>
         <button className="mt-2 text-xs text-gold hover:text-gold-light transition-colors">
           + Add jurisdiction
@@ -246,19 +466,15 @@ function SpecializationsSection() {
           Asset type expertise
         </h3>
         <div className="space-y-1">
-          <Checkbox checked={true} label="Cryptocurrency & digital assets" />
-          <Checkbox
-            checked={true}
-            label="Stocks, ETFs & investment portfolios"
-          />
-          <Checkbox checked={true} label="Self-employment & freelance" />
-          <Checkbox
-            checked={true}
-            label="Employment income (multi-country)"
-          />
-          <Checkbox checked={false} label="Rental property & real estate" />
-          <Checkbox checked={false} label="Pensions & retirement" />
-          <Checkbox checked={false} label="Business / corporate tax" />
+          {allAssetTypes.map((a) => (
+            <Checkbox
+              key={a}
+              checked={expertSpecializations.some(
+                (es) => es.toLowerCase() === a.toLowerCase()
+              )}
+              label={a}
+            />
+          ))}
         </div>
       </div>
 
@@ -269,19 +485,19 @@ function SpecializationsSection() {
         </h3>
         <div className="space-y-1">
           <Checkbox
-            checked={true}
+            checked={false}
             label="Simple (single jurisdiction, single asset type)"
           />
           <Checkbox
-            checked={true}
+            checked={false}
             label="Moderate (single jurisdiction, multiple asset types)"
           />
           <Checkbox
-            checked={true}
+            checked={false}
             label="Complex (single jurisdiction, high volume/DeFi)"
           />
           <Checkbox
-            checked={true}
+            checked={false}
             label="Multi-Jurisdiction (coordination with other experts required)"
           />
         </div>
@@ -293,11 +509,8 @@ function SpecializationsSection() {
           Special certifications
         </h3>
         <div className="space-y-1">
-          <Checkbox checked={true} label="HMRC registered agent" />
-          <Checkbox
-            checked={true}
-            label="Crypto-asset taxation specialist"
-          />
+          <Checkbox checked={false} label="HMRC registered agent" />
+          <Checkbox checked={false} label="Crypto-asset taxation specialist" />
           <Checkbox checked={false} label="US Enrolled Agent" />
           <Checkbox
             checked={false}
@@ -354,11 +567,11 @@ function AvailabilitySection() {
           <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-700/50">
             <div>
               <p className="text-xs text-gray-500">Current active</p>
-              <p className="text-lg font-bold text-white">8</p>
+              <p className="text-lg font-bold text-white">--</p>
             </div>
             <div>
               <p className="text-xs text-gray-500">Available capacity</p>
-              <p className="text-lg font-bold text-teal">7 clients</p>
+              <p className="text-lg font-bold text-teal">--</p>
             </div>
           </div>
         </div>
@@ -399,7 +612,7 @@ function AvailabilitySection() {
         </h3>
         <div className="space-y-2 max-w-lg">
           {[
-            { day: "Monday – Friday", time: "9:00 AM – 5:30 PM GMT", active: true },
+            { day: "Monday – Friday", time: "9:00 AM – 5:30 PM", active: true },
             { day: "Saturday", time: "Off", active: false },
             { day: "Sunday", time: "Off", active: false },
           ].map((row) => (
@@ -434,9 +647,6 @@ function AvailabilitySection() {
             <option>Within 24 hours</option>
             <option>Within 48 hours</option>
           </select>
-          <span className="text-xs text-teal">
-            Your average: 3.8 hours ✅
-          </span>
         </div>
       </div>
 
@@ -445,19 +655,9 @@ function AvailabilitySection() {
         <h3 className="text-sm font-semibold text-gray-300 mb-3">
           Holiday / absence dates
         </h3>
-        <div className="bg-navy border border-gray-700 rounded-lg px-4 py-3 flex items-center justify-between max-w-lg mb-2">
-          <span className="text-sm text-gray-200">
-            March 15 – 22, 2026 — Annual leave
-          </span>
-          <div className="flex gap-2">
-            <button className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
-              Edit
-            </button>
-            <button className="text-xs text-gray-500 hover:text-red-400 transition-colors">
-              Delete
-            </button>
-          </div>
-        </div>
+        <p className="text-sm text-gray-500 mb-2 max-w-lg">
+          No upcoming absences scheduled.
+        </p>
         <button className="text-xs text-gold hover:text-gold-light transition-colors">
           + Add absence period
         </button>
@@ -562,6 +762,8 @@ function NotificationsSection() {
 }
 
 function PaymentsSection() {
+  const { expert } = useExpert();
+
   return (
     <div>
       <h2 className="text-xl font-bold mb-1">Payment Settings</h2>
@@ -575,11 +777,11 @@ function PaymentsSection() {
           Bank details
         </h3>
         <div className="bg-navy border border-gray-700 rounded-xl p-4 max-w-lg">
-          <p className="text-sm text-gray-200 mb-1">
-            Barclays Bank — Account ****7823 — Sort code **-**-89
+          <p className="text-sm text-gray-400">
+            No bank details on file.
           </p>
           <button className="text-xs text-gold hover:text-gold-light transition-colors mt-2">
-            Update bank details
+            Add bank details
           </button>
         </div>
       </div>
@@ -591,13 +793,10 @@ function PaymentsSection() {
         </h3>
         <div className="bg-navy border border-gray-700 rounded-xl p-4 space-y-1.5 max-w-lg">
           <p className="text-sm text-gray-200">
-            Sarah Mitchell Tax Consulting Ltd
+            {expert?.company || "No company name set"}
           </p>
           <p className="text-xs text-gray-500">
-            Companies House: 12847391
-          </p>
-          <p className="text-xs text-gray-500">
-            VAT registered: GB 284 7391 02
+            Update your company name in the Profile section.
           </p>
         </div>
       </div>
@@ -612,12 +811,12 @@ function PaymentsSection() {
         </p>
         <div className="bg-navy border border-gray-700 rounded-xl overflow-hidden max-w-lg">
           {[
-            { level: "Simple case", range: "£300 – £400" },
-            { level: "Moderate case", range: "£500 – £800" },
-            { level: "Complex case", range: "£800 – £1,200" },
+            { level: "Simple case", range: "TBD" },
+            { level: "Moderate case", range: "TBD" },
+            { level: "Complex case", range: "TBD" },
             {
               level: "Multi-jurisdiction coordination",
-              range: "£200 – £400 supplement",
+              range: "TBD",
             },
           ].map((fee, i) => (
             <div
@@ -644,14 +843,9 @@ function PaymentsSection() {
           Tax documents
         </h3>
         <div className="space-y-2 max-w-lg">
-          <div className="bg-navy border border-gray-700 rounded-lg px-4 py-3">
-            <p className="text-sm text-gray-200">
-              Self-Assessment reference: UTR ****4521
-            </p>
-          </div>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-700 text-sm text-gray-300 hover:border-gold/40 hover:text-gold transition-colors">
-            📄 Download annual earnings summary (2025/26)
-          </button>
+          <p className="text-sm text-gray-500">
+            No tax documents available yet.
+          </p>
         </div>
       </div>
     </div>
@@ -659,6 +853,16 @@ function PaymentsSection() {
 }
 
 function AgreementSection() {
+  const { expert } = useExpert();
+
+  // Derive "active since" from expert.created_at
+  const activeSince = expert?.created_at
+    ? new Date(expert.created_at).toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      })
+    : "Unknown";
+
   return (
     <div>
       <h2 className="text-xl font-bold mb-1">Platform Agreement</h2>
@@ -668,12 +872,14 @@ function AgreementSection() {
 
       {/* Status */}
       <div className="bg-teal/5 border border-teal/20 rounded-xl px-5 py-4 mb-6 max-w-lg flex items-center gap-3">
-        <span className="text-teal text-lg">✅</span>
+        <span className="text-teal text-lg">&#10003;</span>
         <div>
           <p className="text-sm text-gray-200 font-medium">
-            Active since November 2024
+            Active since {activeSince}
           </p>
-          <p className="text-xs text-gray-500">Agreement auto-renews annually</p>
+          <p className="text-xs text-gray-500">
+            Agreement auto-renews annually
+          </p>
         </div>
       </div>
 
@@ -723,7 +929,7 @@ function AgreementSection() {
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-3 max-w-lg">
         <button className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-700 text-sm text-gray-300 hover:border-gold/40 hover:text-gold transition-colors">
-          📄 View full agreement (PDF)
+          View full agreement (PDF)
         </button>
         <button className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-700 text-sm text-gray-400 hover:border-gray-600 hover:text-gray-300 transition-colors">
           Request amendment

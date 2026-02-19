@@ -119,6 +119,7 @@ export default function NotesTab({
   // State
   const [notes, setNotes] = useState<InternalNote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -134,17 +135,26 @@ export default function NotesTab({
     let cancelled = false;
 
     async function fetchNotes() {
-      const { data, error } = await supabase
-        .from("internal_notes")
-        .select("*")
-        .eq("client_id", clientId)
-        .order("created_at", { ascending: true });
+      try {
+        const { data, error: fetchError } = await supabase
+          .from("internal_notes")
+          .select("*")
+          .eq("client_id", clientId)
+          .order("created_at", { ascending: true });
 
-      if (!cancelled) {
-        if (!error && data) {
-          setNotes(data as InternalNote[]);
+        if (!cancelled) {
+          if (fetchError) {
+            setError(fetchError.message);
+          } else {
+            setNotes((data as InternalNote[]) ?? []);
+          }
+          setLoading(false);
         }
-        setLoading(false);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to load notes");
+          setLoading(false);
+        }
       }
     }
 
@@ -153,7 +163,8 @@ export default function NotesTab({
     return () => {
       cancelled = true;
     };
-  }, [supabase, clientId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId]);
 
   // -------------------------------------------------------------------------
   // Auto-scroll to bottom when notes change
@@ -174,6 +185,7 @@ export default function NotesTab({
     if (!trimmed || submitting) return;
 
     setSubmitting(true);
+    setError(null);
 
     // Optimistic note
     const optimisticNote: InternalNote = {
@@ -188,28 +200,40 @@ export default function NotesTab({
     setNotes((prev) => [...prev, optimisticNote]);
     setContent("");
 
-    // Persist to Supabase
-    const { data, error } = await supabase
-      .from("internal_notes")
-      .insert({
-        client_id: clientId,
-        author_id: expertId,
-        author_name: expertName,
-        content: trimmed,
-      })
-      .select()
-      .single();
+    try {
+      // Persist to Supabase
+      const { data, error: insertError } = await supabase
+        .from("internal_notes")
+        .insert({
+          client_id: clientId,
+          author_id: expertId,
+          author_name: expertName,
+          content: trimmed,
+        })
+        .select()
+        .single();
 
-    if (!error && data) {
-      // Replace optimistic note with the real one
-      setNotes((prev) =>
-        prev.map((n) => (n.id === optimisticNote.id ? (data as InternalNote) : n))
-      );
+      if (insertError) {
+        // Remove optimistic note and restore content
+        setNotes((prev) => prev.filter((n) => n.id !== optimisticNote.id));
+        setContent(trimmed);
+        setError(insertError.message);
+      } else if (data) {
+        // Replace optimistic note with the real one
+        setNotes((prev) =>
+          prev.map((n) => (n.id === optimisticNote.id ? (data as InternalNote) : n))
+        );
+      }
+    } catch (err) {
+      setNotes((prev) => prev.filter((n) => n.id !== optimisticNote.id));
+      setContent(trimmed);
+      setError(err instanceof Error ? err.message : "Failed to add note");
     }
 
     setSubmitting(false);
     textareaRef.current?.focus();
-  }, [content, submitting, clientId, expertId, expertName, supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content, submitting, clientId, expertId, expertName]);
 
   // Handle Ctrl/Cmd+Enter to submit
   const handleKeyDown = useCallback(
@@ -243,6 +267,19 @@ export default function NotesTab({
             </p>
           </div>
         </div>
+
+        {/* Error banner */}
+        {error && (
+          <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center justify-between">
+            <p className="text-sm text-red-400">{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-400 hover:text-red-300 text-xs ml-3"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Scrollable notes area */}
         <div

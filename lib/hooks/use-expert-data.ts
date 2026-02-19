@@ -12,60 +12,83 @@ interface DashboardStats {
 }
 
 export function useDashboardStats() {
-  const { expert } = useExpert();
+  const { expert, loading: authLoading } = useExpert();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!expert) return;
+    if (authLoading) return;
+    if (!expert) {
+      setLoading(false);
+      return;
+    }
 
+    let cancelled = false;
     const supabase = createClient();
 
     async function fetchStats() {
-      // Active clients count
-      const { count: activeClients } = await supabase
-        .from("client_experts")
-        .select("*", { count: "exact", head: true })
-        .eq("expert_id", expert!.id)
-        .eq("status", "active");
+      try {
+        // Active clients count
+        const { count: activeClients } = await supabase
+          .from("client_experts")
+          .select("*", { count: "exact", head: true })
+          .eq("expert_id", expert!.id)
+          .eq("status", "active");
 
-      // Distinct jurisdictions
-      const { data: jurisdictionRows } = await supabase
-        .from("client_experts")
-        .select("jurisdiction")
-        .eq("expert_id", expert!.id);
+        // Distinct jurisdictions
+        const { data: jurisdictionRows } = await supabase
+          .from("client_experts")
+          .select("jurisdiction")
+          .eq("expert_id", expert!.id);
 
-      const jurisdictions = new Set(
-        jurisdictionRows?.map((r) => r.jurisdiction) ?? []
-      ).size;
+        const jurisdictions = new Set(
+          jurisdictionRows?.map((r) => r.jurisdiction) ?? []
+        ).size;
 
-      // Earnings this quarter
-      const now = new Date();
-      const quarterStart = new Date(
-        now.getFullYear(),
-        Math.floor(now.getMonth() / 3) * 3,
-        1
-      );
-      const { data: payments } = await supabase
-        .from("payments")
-        .select("amount")
-        .eq("expert_id", expert!.id)
-        .gte("paid_at", quarterStart.toISOString());
+        // Earnings this quarter
+        const now = new Date();
+        const quarterStart = new Date(
+          now.getFullYear(),
+          Math.floor(now.getMonth() / 3) * 3,
+          1
+        );
+        const { data: payments } = await supabase
+          .from("payments")
+          .select("amount")
+          .eq("expert_id", expert!.id)
+          .gte("paid_at", quarterStart.toISOString());
 
-      const earnedThisQuarter =
-        payments?.reduce((sum, p) => sum + p.amount, 0) ?? 0;
+        const earnedThisQuarter =
+          payments?.reduce((sum, p) => sum + p.amount, 0) ?? 0;
 
-      setStats({
-        activeClients: activeClients ?? 0,
-        jurisdictions,
-        rating: expert!.rating,
-        earnedThisQuarter,
-      });
-      setLoading(false);
+        if (!cancelled) {
+          setStats({
+            activeClients: activeClients ?? 0,
+            jurisdictions,
+            rating: expert!.rating,
+            earnedThisQuarter,
+          });
+        }
+      } catch {
+        // Queries failed — show zeros rather than infinite skeleton
+        if (!cancelled) {
+          setStats({
+            activeClients: 0,
+            jurisdictions: 0,
+            rating: expert!.rating,
+            earnedThisQuarter: 0,
+          });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
 
     fetchStats();
-  }, [expert]);
+    return () => {
+      cancelled = true;
+    };
+  }, [expert, authLoading]);
 
   return { stats, loading };
 }
@@ -80,45 +103,61 @@ interface UrgentTask {
 }
 
 export function useUrgentTasks() {
-  const { expert } = useExpert();
+  const { expert, loading: authLoading } = useExpert();
   const [tasks, setTasks] = useState<UrgentTask[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!expert) return;
+    if (authLoading) return;
+    if (!expert) {
+      setLoading(false);
+      return;
+    }
 
+    let cancelled = false;
     const supabase = createClient();
 
     async function fetchTasks() {
-      const now = new Date();
-      const weekFromNow = new Date(
-        now.getTime() + 7 * 24 * 60 * 60 * 1000
-      );
+      try {
+        const now = new Date();
+        const weekFromNow = new Date(
+          now.getTime() + 7 * 24 * 60 * 60 * 1000
+        );
 
-      const { data } = await supabase
-        .from("tasks")
-        .select("id, title, status, due_date, client:clients(full_name)")
-        .eq("expert_id", expert!.id)
-        .in("status", ["pending", "in_progress"])
-        .not("due_date", "is", null)
-        .lte("due_date", weekFromNow.toISOString())
-        .order("due_date", { ascending: true });
+        const { data } = await supabase
+          .from("tasks")
+          .select("id, title, status, due_date, client:clients(full_name)")
+          .eq("expert_id", expert!.id)
+          .in("status", ["pending", "in_progress"])
+          .not("due_date", "is", null)
+          .lte("due_date", weekFromNow.toISOString())
+          .order("due_date", { ascending: true });
 
-      const mapped: UrgentTask[] = (data ?? []).map((t) => ({
-        id: t.id,
-        title: t.title,
-        status: t.status,
-        due_date: t.due_date,
-        client_name: (t.client as unknown as { full_name: string })?.full_name ?? "Unknown",
-        is_overdue: t.due_date ? new Date(t.due_date) < now : false,
-      }));
-
-      setTasks(mapped);
-      setLoading(false);
+        if (!cancelled) {
+          const mapped: UrgentTask[] = (data ?? []).map((t) => ({
+            id: t.id,
+            title: t.title,
+            status: t.status,
+            due_date: t.due_date,
+            client_name:
+              (t.client as unknown as { full_name: string })?.full_name ??
+              "Unknown",
+            is_overdue: t.due_date ? new Date(t.due_date) < now : false,
+          }));
+          setTasks(mapped);
+        }
+      } catch {
+        // fail silently — show empty
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
 
     fetchTasks();
-  }, [expert]);
+    return () => {
+      cancelled = true;
+    };
+  }, [expert, authLoading]);
 
   return { tasks, loading };
 }
@@ -129,76 +168,91 @@ interface MonthlyEarning {
 }
 
 export function useMonthlyEarnings() {
-  const { expert } = useExpert();
+  const { expert, loading: authLoading } = useExpert();
   const [earnings, setEarnings] = useState<MonthlyEarning[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!expert) return;
+    if (authLoading) return;
+    if (!expert) {
+      setLoading(false);
+      return;
+    }
 
+    let cancelled = false;
     const supabase = createClient();
 
     async function fetchEarnings() {
-      const now = new Date();
-      const sixMonthsAgo = new Date(now);
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
-      sixMonthsAgo.setDate(1);
-      sixMonthsAgo.setHours(0, 0, 0, 0);
+      try {
+        const now = new Date();
+        const sixMonthsAgo = new Date(now);
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+        sixMonthsAgo.setDate(1);
+        sixMonthsAgo.setHours(0, 0, 0, 0);
 
-      const { data } = await supabase
-        .from("payments")
-        .select("amount, paid_at")
-        .eq("expert_id", expert!.id)
-        .gte("paid_at", sixMonthsAgo.toISOString())
-        .order("paid_at", { ascending: true });
+        const { data } = await supabase
+          .from("payments")
+          .select("amount, paid_at")
+          .eq("expert_id", expert!.id)
+          .gte("paid_at", sixMonthsAgo.toISOString())
+          .order("paid_at", { ascending: true });
 
-      // Group by month
-      const monthNames = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ];
+        if (!cancelled) {
+          // Group by month
+          const monthNames = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ];
 
-      const grouped: Record<string, number> = {};
+          const grouped: Record<string, number> = {};
 
-      // Initialize last 6 months
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(now);
-        d.setMonth(d.getMonth() - i);
-        const key = `${d.getFullYear()}-${d.getMonth()}`;
-        grouped[key] = 0;
+          // Initialize last 6 months
+          for (let i = 5; i >= 0; i--) {
+            const d = new Date(now);
+            d.setMonth(d.getMonth() - i);
+            const key = `${d.getFullYear()}-${d.getMonth()}`;
+            grouped[key] = 0;
+          }
+
+          (data ?? []).forEach((p) => {
+            const d = new Date(p.paid_at);
+            const key = `${d.getFullYear()}-${d.getMonth()}`;
+            if (key in grouped) {
+              grouped[key] += p.amount;
+            }
+          });
+
+          const result: MonthlyEarning[] = Object.entries(grouped).map(
+            ([key, amount]) => {
+              const [, monthIndex] = key.split("-");
+              return { month: monthNames[parseInt(monthIndex)], amount };
+            }
+          );
+
+          setEarnings(result);
+        }
+      } catch {
+        // fail silently — show empty
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-
-      (data ?? []).forEach((p) => {
-        const d = new Date(p.paid_at);
-        const key = `${d.getFullYear()}-${d.getMonth()}`;
-        if (key in grouped) {
-          grouped[key] += p.amount;
-        }
-      });
-
-      const result: MonthlyEarning[] = Object.entries(grouped).map(
-        ([key, amount]) => {
-          const [, monthIndex] = key.split("-");
-          return { month: monthNames[parseInt(monthIndex)], amount };
-        }
-      );
-
-      setEarnings(result);
-      setLoading(false);
     }
 
     fetchEarnings();
-  }, [expert]);
+    return () => {
+      cancelled = true;
+    };
+  }, [expert, authLoading]);
 
   return { earnings, loading };
 }
