@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   ExpertAuthProvider,
@@ -28,7 +28,6 @@ function getInitials(name: string): string {
 
 function ExpertNavBar() {
   const pathname = usePathname();
-  const router = useRouter();
   const { expert, loading, signOut } = useExpert();
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -144,10 +143,9 @@ function ExpertNavBar() {
                       </div>
                     )}
                     <button
-                      onClick={async () => {
-                        await signOut();
-                        router.push("/expert/login");
-                        router.refresh();
+                      onClick={() => {
+                        setShowDropdown(false);
+                        signOut();
                       }}
                       className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
                     >
