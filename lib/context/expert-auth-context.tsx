@@ -59,13 +59,6 @@ export function ExpertAuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
     let initialResolved = false;
 
-    // Debug: check cookie visibility and session state before auth listener
-    (async () => {
-      console.log('[COOKIES]', document.cookie);
-      const session = await supabase.auth.getSession();
-      console.log('[GET_SESSION]', session.data.session?.user?.id?.slice(0, 8), session.error);
-    })();
-
     async function fetchExpert(userId: string, isInitial: boolean) {
       try {
         const { data, error: fetchErr } = await supabase
@@ -112,7 +105,6 @@ export function ExpertAuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, newSession: Session | null) => {
-      console.log('[AUTH DEBUG]', event, !!newSession, newSession?.user?.id?.slice(0, 8));
       if (!mounted) return;
 
       if (event === "SIGNED_OUT") {

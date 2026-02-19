@@ -214,7 +214,6 @@ export default function OverviewTab() {
           { data: allClients },
           { data: allPaymentsForChart },
           { data: pipelineClients },
-          { data: activityRows },
           { data: clientCountries },
         ] = await Promise.all([
           // Stats: client count
@@ -244,15 +243,22 @@ export default function OverviewTab() {
           supabase.from("payments").select("amount, payment_date"),
           // Pipeline funnel
           supabase.from("clients").select("pipeline_stage"),
-          // Activity feed
-          supabase
-            .from("activity_log")
-            .select("id, action, details, created_at")
-            .order("created_at", { ascending: false })
-            .limit(20),
           // Country breakdown
           supabase.from("clients").select("countries"),
         ]);
+
+        // Activity feed — separate query so a missing table doesn't break the dashboard
+        let activityRows: ActivityEntry[] = [];
+        try {
+          const { data } = await supabase
+            .from("activity_log")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(20);
+          activityRows = (data as ActivityEntry[]) ?? [];
+        } catch {
+          // Table may not exist yet — ignore
+        }
 
         // --- Stats ---
         const sumPayments = (rows: Array<{ amount: number }> | null) =>
@@ -328,7 +334,7 @@ export default function OverviewTab() {
         );
 
         // --- Activity Feed ---
-        setActivity((activityRows as ActivityEntry[]) ?? []);
+        setActivity(activityRows);
 
         // --- Country Breakdown ---
         const countryCounts: Record<string, number> = {};
