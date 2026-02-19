@@ -37,13 +37,16 @@ function statusToCategory(
 }
 
 export function useClientsData() {
-  const { expert } = useExpert();
+  const { expert, loading: authLoading } = useExpert();
   const [clients, setClients] = useState<ClientWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchClients = useCallback(async () => {
-    if (!expert) return;
+    if (!expert) {
+      setLoading(false);
+      return;
+    }
 
     const supabase = createClient();
     setLoading(true);
@@ -137,8 +140,9 @@ export function useClientsData() {
   }, [expert]);
 
   useEffect(() => {
+    if (authLoading) return;
     fetchClients();
-  }, [fetchClients]);
+  }, [fetchClients, authLoading]);
 
   return { clients, loading, error, refetch: fetchClients };
 }

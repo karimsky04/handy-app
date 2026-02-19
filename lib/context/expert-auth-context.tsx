@@ -29,16 +29,6 @@ const ExpertAuthContext = createContext<ExpertAuthContextValue>({
   signOut: async () => {},
 });
 
-// Timeout wrapper — ensures loading always resolves
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Auth timeout")), ms)
-    ),
-  ]);
-}
-
 export function ExpertAuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [expert, setExpert] = useState<Expert | null>(null);
@@ -47,98 +37,95 @@ export function ExpertAuthProvider({ children }: { children: ReactNode }) {
 
   const router = useRouter();
   const pathnameRef = useRef(usePathname());
-  const supabase = createClient();
-
-  // Keep pathnameRef current without re-running the effect
   const pathname = usePathname();
   pathnameRef.current = pathname;
 
+  const supabase = createClient();
+
   useEffect(() => {
     let mounted = true;
+    let initialResolved = false;
 
-    async function init() {
+    async function fetchExpert(userId: string) {
       try {
-        // Use getUser() — validates the token server-side and refreshes if needed.
-        // getSession() only reads from storage and can return stale/expired sessions.
-        const {
-          data: { user },
-          error: userError,
-        } = await withTimeout(supabase.auth.getUser(), 10000);
+        const { data, error: fetchErr } = await supabase
+          .from("experts")
+          .select("*")
+          .eq("auth_user_id", userId)
+          .single();
 
         if (!mounted) return;
+        if (fetchErr) {
+          setError("Expert profile not found");
+          setExpert(null);
+        } else {
+          setExpert(data as Expert);
+          setError(null);
+        }
+      } catch {
+        if (mounted) {
+          setError("Failed to load profile");
+          setExpert(null);
+        }
+      }
+    }
 
-        if (userError || !user) {
-          // No valid session — redirect to login (unless already there)
+    // Safety net: if auth hasn't resolved after 3 seconds, stop loading
+    // and redirect to login
+    const timeoutId = setTimeout(() => {
+      if (mounted && !initialResolved) {
+        initialResolved = true;
+        setLoading(false);
+        if (pathnameRef.current !== "/expert/login") {
+          router.replace(
+            `/expert/login?redirectTo=${encodeURIComponent(pathnameRef.current)}`
+          );
+        }
+      }
+    }, 3000);
+
+    // Primary auth mechanism: onAuthStateChange fires INITIAL_SESSION
+    // immediately with the session read from cookies. No extra API call needed
+    // because the middleware already validated and refreshed the token.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      if (!mounted) return;
+
+      if (event === "SIGNED_OUT") {
+        setSession(null);
+        setExpert(null);
+        setLoading(false);
+        clearTimeout(timeoutId);
+        router.replace("/expert/login");
+        return;
+      }
+
+      setSession(newSession);
+
+      if (event === "INITIAL_SESSION") {
+        initialResolved = true;
+        clearTimeout(timeoutId);
+
+        if (newSession?.user) {
+          await fetchExpert(newSession.user.id);
+        } else {
+          setExpert(null);
+          // No session found in cookies — redirect to login
           if (pathnameRef.current !== "/expert/login") {
             router.replace(
               `/expert/login?redirectTo=${encodeURIComponent(pathnameRef.current)}`
             );
           }
-          return;
         }
 
-        // Get the session object for context consumers
-        const {
-          data: { session: currentSession },
-        } = await supabase.auth.getSession();
-
-        if (!mounted) return;
-        setSession(currentSession);
-
-        // Fetch expert profile
-        const { data: expertRow, error: expertError } = await withTimeout(
-          Promise.resolve(
-            supabase
-              .from("experts")
-              .select("*")
-              .eq("auth_user_id", user.id)
-              .single()
-          ),
-          10000
-        );
-
-        if (!mounted) return;
-
-        if (expertError) {
-          setError("Expert profile not found");
-        } else {
-          setExpert(expertRow as Expert);
-        }
-      } catch {
-        if (mounted) {
-          setError("Failed to initialize auth");
-          // On error, redirect to login as a safety fallback
-          if (pathnameRef.current !== "/expert/login") {
-            router.replace("/expert/login");
-          }
-        }
-      } finally {
         if (mounted) setLoading(false);
-      }
-    }
-
-    init();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      if (!mounted) return;
-      setSession(newSession);
-
-      if (event === "SIGNED_OUT") {
-        setExpert(null);
-        router.replace("/expert/login");
         return;
       }
 
+      // SIGNED_IN / TOKEN_REFRESHED — update expert in background
       if (newSession?.user) {
-        const { data: expertRow } = await supabase
-          .from("experts")
-          .select("*")
-          .eq("auth_user_id", newSession.user.id)
-          .single();
-
-        if (mounted) setExpert((expertRow as Expert) ?? null);
+        await fetchExpert(newSession.user.id);
       } else {
         setExpert(null);
       }
@@ -146,6 +133,7 @@ export function ExpertAuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
