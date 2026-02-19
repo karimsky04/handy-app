@@ -31,7 +31,7 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Not logged in → redirect to login (except if already on login page)
+  // --- Expert routes ---
   if (!user && pathname.startsWith("/expert") && pathname !== "/expert/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/expert/login";
@@ -39,7 +39,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Logged in → redirect away from login page
   if (user && pathname === "/expert/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/expert";
@@ -47,9 +46,48 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // --- Platform admin routes ---
+  if (pathname.startsWith("/platform-admin") && pathname !== "/platform-admin/login") {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/platform-admin/login";
+      url.searchParams.set("redirectTo", pathname);
+      return NextResponse.redirect(url);
+    }
+
+    // Check admin role
+    const { data: expertRow } = await supabase
+      .from("experts")
+      .select("role")
+      .eq("auth_user_id", user.id)
+      .single();
+
+    if (!expertRow || expertRow.role !== "admin") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/expert";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  if (user && pathname === "/platform-admin/login") {
+    // Check if admin — if yes, redirect to admin dashboard
+    const { data: expertRow } = await supabase
+      .from("experts")
+      .select("role")
+      .eq("auth_user_id", user.id)
+      .single();
+
+    if (expertRow?.role === "admin") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/platform-admin";
+      url.searchParams.delete("redirectTo");
+      return NextResponse.redirect(url);
+    }
+  }
+
   return supabaseResponse;
 }
 
 export const config = {
-  matcher: ["/expert/:path*"],
+  matcher: ["/expert/:path*", "/platform-admin/:path*"],
 };

@@ -4,9 +4,11 @@ export interface Expert {
   full_name: string;
   email: string;
   phone: string | null;
+  company: string | null;
   jurisdictions: string[];
   specializations: string[];
   rating: number | null;
+  role: string | null; // "admin" | "expert"
   status: string;
   created_at: string;
   updated_at: string;

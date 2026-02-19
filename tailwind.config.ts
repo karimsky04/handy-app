@@ -23,6 +23,11 @@ const config: Config = {
           light: "#F7B84E",
           dark: "#D4901A",
         },
+        purple: {
+          DEFAULT: "#7C3AED",
+          light: "#8B5CF6",
+          dark: "#6D28D9",
+        },
       },
     },
   },
