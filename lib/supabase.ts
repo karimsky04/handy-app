@@ -24,8 +24,17 @@ let _browserClient: ReturnType<typeof createBrowserClient> | null = null;
 export function createClient() {
   if (!_browserClient) {
     _browserClient = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co",
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder"
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookieOptions: {
+          name: 'sb-session',
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+          domain: '',
+          path: '/',
+          sameSite: 'lax',
+        },
+      }
     );
   }
   return _browserClient;

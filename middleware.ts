@@ -31,6 +31,8 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  console.log('[MIDDLEWARE]', request.nextUrl.pathname, !!user, user?.id?.slice(0, 8));
+
   const { pathname } = request.nextUrl;
 
   // Helper: create a redirect that preserves any refreshed auth cookies

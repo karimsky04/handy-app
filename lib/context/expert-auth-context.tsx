@@ -105,6 +105,7 @@ export function ExpertAuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, newSession: Session | null) => {
+      console.log('[AUTH DEBUG]', event, !!newSession, newSession?.user?.id?.slice(0, 8));
       if (!mounted) return;
 
       if (event === "SIGNED_OUT") {
