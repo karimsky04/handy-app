@@ -8,7 +8,6 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookieEncoding: 'base64url',
       cookies: {
         getAll() {
           return request.cookies.getAll();

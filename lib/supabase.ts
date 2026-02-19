@@ -27,7 +27,33 @@ export function createClient() {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
-        cookieEncoding: 'base64url',
+        cookies: {
+          getAll() {
+            const pairs = document.cookie.split(';');
+            const cookies: { name: string; value: string }[] = [];
+            for (const pair of pairs) {
+              const trimmed = pair.trim();
+              if (!trimmed) continue;
+              const eqIndex = trimmed.indexOf('=');
+              if (eqIndex === -1) continue;
+              const name = trimmed.substring(0, eqIndex);
+              const value = trimmed.substring(eqIndex + 1);
+              cookies.push({ name, value: decodeURIComponent(value) });
+            }
+            return cookies;
+          },
+          setAll(cookiesToSet) {
+            for (const { name, value, options } of cookiesToSet) {
+              let cookie = `${name}=${encodeURIComponent(value)}`;
+              cookie += `; path=${options?.path ?? '/'}`;
+              if (options?.maxAge) cookie += `; max-age=${options.maxAge}`;
+              if (options?.sameSite) cookie += `; samesite=${options.sameSite}`;
+              if (options?.secure) cookie += '; secure';
+              if (options?.domain) cookie += `; domain=${options.domain}`;
+              document.cookie = cookie;
+            }
+          },
+        },
       }
     );
   }
