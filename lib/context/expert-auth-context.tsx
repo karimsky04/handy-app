@@ -29,6 +29,17 @@ const ExpertAuthContext = createContext<ExpertAuthContextValue>({
   signOut: async () => {},
 });
 
+/** Return the correct login path based on which section the user is in. */
+function getLoginPath(pathname: string): string {
+  if (pathname.startsWith("/platform-admin")) return "/platform-admin/login";
+  return "/expert/login";
+}
+
+/** Check if the given pathname is already a login page. */
+function isLoginPage(pathname: string): boolean {
+  return pathname === "/expert/login" || pathname === "/platform-admin/login";
+}
+
 export function ExpertAuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [expert, setExpert] = useState<Expert | null>(null);
@@ -79,8 +90,9 @@ export function ExpertAuthProvider({ children }: { children: ReactNode }) {
         initialResolved = true;
         setLoading(false);
         const cur = pathnameRef.current;
-        if (cur !== "/expert/login" && cur !== "/platform-admin/login") {
-          window.location.href = `/expert/login?redirectTo=${encodeURIComponent(cur)}`;
+        if (!isLoginPage(cur)) {
+          const login = getLoginPath(cur);
+          window.location.href = `${login}?redirectTo=${encodeURIComponent(cur)}`;
         }
       }
     }, 5000);
@@ -109,8 +121,9 @@ export function ExpertAuthProvider({ children }: { children: ReactNode }) {
         } else {
           setExpert(null);
           const cur = pathnameRef.current;
-          if (cur !== "/expert/login" && cur !== "/platform-admin/login") {
-            window.location.href = `/expert/login?redirectTo=${encodeURIComponent(cur)}`;
+          if (!isLoginPage(cur)) {
+            const login = getLoginPath(cur);
+            window.location.href = `${login}?redirectTo=${encodeURIComponent(cur)}`;
           }
         }
 
@@ -133,12 +146,13 @@ export function ExpertAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function signOut() {
+    const login = getLoginPath(pathnameRef.current);
     try {
       await supabase.auth.signOut();
     } catch {
       // Even if the API call fails, we still redirect below.
     }
-    window.location.href = "/expert/login";
+    window.location.href = login;
   }
 
   return (
