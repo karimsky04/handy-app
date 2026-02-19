@@ -443,7 +443,8 @@ export default function DocumentsTab({
 
     if (data) setDocuments(data as Document[]);
     setLoading(false);
-  }, [supabase, clientId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId]);
 
   useEffect(() => {
     fetchDocuments();
@@ -548,7 +549,8 @@ export default function DocumentsTab({
       // Create record in documents table
       const { error: dbError } = await supabase.from("documents").insert({
         client_id: clientId,
-        uploaded_by: expertId,
+        uploaded_by_type: "expert",
+        uploaded_by_id: expertId,
         uploaded_by_name: expertName,
         file_path: storagePath,
         file_name: selectedFile.name,
@@ -576,9 +578,9 @@ export default function DocumentsTab({
     } finally {
       setUploading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedFile,
-    supabase,
     clientId,
     expertId,
     expertName,
@@ -603,7 +605,8 @@ export default function DocumentsTab({
       }
       window.open(data.signedUrl, "_blank");
     },
-    [supabase]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   // -------------------------------------------------------------------------
@@ -624,7 +627,8 @@ export default function DocumentsTab({
       setConfirmDeleteId(null);
       await fetchDocuments();
     },
-    [supabase, fetchDocuments]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fetchDocuments]
   );
 
   // -------------------------------------------------------------------------
@@ -695,7 +699,8 @@ export default function DocumentsTab({
     } finally {
       setGeneratingLink(false);
     }
-  }, [supabase, clientId, selectedDocIds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId, selectedDocIds]);
 
   const handleCopyLink = useCallback(async () => {
     if (!downloadLink) return;

@@ -158,7 +158,7 @@ function ProfileSection() {
     if (expert) {
       setFullName(expert.full_name ?? "");
       setPhone(expert.phone ?? "");
-      setCompany(expert.company ?? "");
+      setCompany(expert.company_name ?? "");
     }
   }, [expert]);
 
@@ -185,7 +185,7 @@ function ProfileSection() {
       .update({
         full_name: fullName.trim(),
         phone: phone.trim() || null,
-        company: company.trim() || null,
+        company_name: company.trim() || null,
       })
       .eq("id", expert.id);
 
@@ -793,7 +793,7 @@ function PaymentsSection() {
         </h3>
         <div className="bg-navy border border-gray-700 rounded-xl p-4 space-y-1.5 max-w-lg">
           <p className="text-sm text-gray-200">
-            {expert?.company || "No company name set"}
+            {expert?.company_name || "No company name set"}
           </p>
           <p className="text-xs text-gray-500">
             Update your company name in the Profile section.

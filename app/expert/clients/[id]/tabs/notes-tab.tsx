@@ -191,7 +191,7 @@ export default function NotesTab({
     const optimisticNote: InternalNote = {
       id: `temp-${Date.now()}`,
       client_id: clientId,
-      author_id: expertId,
+      expert_id: expertId,
       author_name: expertName,
       content: trimmed,
       created_at: new Date().toISOString(),
@@ -206,7 +206,7 @@ export default function NotesTab({
         .from("internal_notes")
         .insert({
           client_id: clientId,
-          author_id: expertId,
+          expert_id: expertId,
           author_name: expertName,
           content: trimmed,
         })

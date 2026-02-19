@@ -466,7 +466,7 @@ function ExpertRow({
           <span className="text-sm font-semibold text-white">{expert.full_name}</span>
         </td>
         <td className="px-6 py-4">
-          <span className="text-sm text-gray-400">{expert.company || "\u2014"}</span>
+          <span className="text-sm text-gray-400">{expert.company_name || "\u2014"}</span>
         </td>
         <td className="px-6 py-4">
           <span className="text-sm text-gray-400">{expert.email}</span>

@@ -1,17 +1,24 @@
 export interface Expert {
   id: string;
+  created_at: string;
   auth_user_id: string;
   full_name: string;
   email: string;
   phone: string | null;
-  company: string | null;
-  jurisdictions: string[];
+  company_name: string | null;
+  professional_title: string | null;
+  license_number: string | null;
+  country: string | null;
+  languages: string[] | null;
   specializations: string[];
-  rating: number | null;
-  role: string | null; // "admin" | "expert"
+  jurisdictions: string[];
+  bio: string | null;
+  max_clients: number | null;
   status: string;
-  created_at: string;
-  updated_at: string;
+  role: string | null; // "admin" | "expert"
+  avatar_url: string | null;
+  rating: number | null;
+  total_earned: number | null;
 }
 
 export interface Client {
@@ -153,22 +160,23 @@ export interface Message {
 export interface Document {
   id: string;
   client_id: string;
-  uploaded_by: string | null;
-  uploaded_by_name: string | null;
   uploaded_by_type: string | null; // "expert" | "client"
-  file_path: string;
+  uploaded_by_id: string | null;
+  uploaded_by_name: string | null;
   file_name: string;
+  file_path: string;
   file_size: number;
   file_type: string;
   jurisdiction: string | null;
   doc_category: string; // "Tax Report" | "Source Data" | "Exchange CSV" | etc.
+  status: string | null;
   created_at: string;
 }
 
 export interface InternalNote {
   id: string;
   client_id: string;
-  author_id: string;
+  expert_id: string;
   author_name: string;
   content: string;
   created_at: string;
