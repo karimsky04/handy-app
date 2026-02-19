@@ -19,11 +19,10 @@ interface TableCount {
 const DB_TABLES = [
   "clients",
   "experts",
-  "tasks",
   "documents",
-  "invoices",
+  "tasks",
   "messages",
-  "internal_notes",
+  "payments",
 ];
 
 function formatDate(dateStr: string): string {

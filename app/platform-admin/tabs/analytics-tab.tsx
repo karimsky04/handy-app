@@ -29,12 +29,11 @@ interface ClientRow {
   countries: string[] | null;
 }
 
-interface InvoiceRow {
+interface PaymentRow {
   id: string;
-  paid_at: string | null;
-  paid_amount: number | null;
-  status: string;
-  expert_id: string | null;
+  payment_date: string;
+  amount: number;
+  expert_id: string;
   client_id: string | null;
 }
 
@@ -206,7 +205,7 @@ export default function AnalyticsTab() {
 
   /* ---- raw data state ---- */
   const [clients, setClients] = useState<ClientRow[]>([]);
-  const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
+  const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [tasks, setTasks] = useState<TaskRow[]>([]);
   const [experts, setExperts] = useState<ExpertRow[]>([]);
   const [documentCount, setDocumentCount] = useState(0);
@@ -222,7 +221,7 @@ export default function AnalyticsTab() {
       try {
         const [
           { data: clientData },
-          { data: invoiceData },
+          { data: paymentData },
           { data: taskData },
           { count: docCount },
           { count: msgCount },
@@ -232,8 +231,8 @@ export default function AnalyticsTab() {
             .from("clients")
             .select("id, created_at, countries"),
           supabase
-            .from("invoices")
-            .select("id, paid_at, paid_amount, status, expert_id, client_id"),
+            .from("payments")
+            .select("id, payment_date, amount, expert_id, client_id"),
           supabase
             .from("tasks")
             .select("id, status, client_id"),
@@ -249,7 +248,7 @@ export default function AnalyticsTab() {
         ]);
 
         setClients((clientData ?? []) as ClientRow[]);
-        setInvoices((invoiceData ?? []) as InvoiceRow[]);
+        setPayments((paymentData ?? []) as PaymentRow[]);
         setTasks((taskData ?? []) as TaskRow[]);
         setDocumentCount(docCount ?? 0);
         setMessageCount(msgCount ?? 0);
@@ -302,50 +301,44 @@ export default function AnalyticsTab() {
     }));
   }, [clientsByMonth, last12]);
 
-  // ---- Revenue: paid invoices ----
-  const paidInvoices = useMemo(() => {
-    return invoices.filter(
-      (inv) => inv.status === "paid" && inv.paid_at && inv.paid_amount != null
-    );
-  }, [invoices]);
-
+  // ---- Revenue: from payments table ----
   const totalRevenue = useMemo(() => {
-    return paidInvoices.reduce((sum, inv) => sum + (inv.paid_amount ?? 0), 0);
-  }, [paidInvoices]);
+    return payments.reduce((sum, p) => sum + (p.amount ?? 0), 0);
+  }, [payments]);
 
   // Revenue over time
   const revenueByMonth = useMemo(() => {
     const map: Record<string, number> = {};
-    for (const inv of paidInvoices) {
-      const key = getMonthKey(inv.paid_at!);
-      map[key] = (map[key] ?? 0) + (inv.paid_amount ?? 0);
+    for (const p of payments) {
+      const key = getMonthKey(p.payment_date);
+      map[key] = (map[key] ?? 0) + (p.amount ?? 0);
     }
     return last12.map((month) => ({
       month: getMonthLabel(month),
       revenue: map[month] ?? 0,
     }));
-  }, [paidInvoices, last12]);
+  }, [payments, last12]);
 
-  // Revenue by country (join invoices with clients via client_id)
+  // Revenue by country (join payments with clients via client_id)
   const revenueByCountry = useMemo(() => {
     const clientMap = new Map(clients.map((c) => [c.id, c]));
     const map: Record<string, number> = {};
-    for (const inv of paidInvoices) {
-      const client = inv.client_id ? clientMap.get(inv.client_id) : null;
+    for (const p of payments) {
+      const client = p.client_id ? clientMap.get(p.client_id) : null;
       const country = client?.countries?.[0] ?? "Unknown";
-      map[country] = (map[country] ?? 0) + (inv.paid_amount ?? 0);
+      map[country] = (map[country] ?? 0) + (p.amount ?? 0);
     }
     return Object.entries(map)
       .map(([country, revenue]) => ({ country, revenue }))
       .sort((a, b) => b.revenue - a.revenue);
-  }, [paidInvoices, clients]);
+  }, [payments, clients]);
 
   // Revenue by expert (top 10)
   const revenueByExpert = useMemo(() => {
     const map: Record<string, number> = {};
-    for (const inv of paidInvoices) {
-      const key = inv.expert_id ?? "unassigned";
-      map[key] = (map[key] ?? 0) + (inv.paid_amount ?? 0);
+    for (const p of payments) {
+      const key = p.expert_id ?? "unassigned";
+      map[key] = (map[key] ?? 0) + (p.amount ?? 0);
     }
     const expertMap = new Map(experts.map((e) => [e.id, e.full_name]));
     return Object.entries(map)
@@ -355,13 +348,13 @@ export default function AnalyticsTab() {
       }))
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 10);
-  }, [paidInvoices, experts]);
+  }, [payments, experts]);
 
   // Average fee
   const averageFee = useMemo(() => {
-    if (paidInvoices.length === 0) return 0;
-    return totalRevenue / paidInvoices.length;
-  }, [totalRevenue, paidInvoices]);
+    if (payments.length === 0) return 0;
+    return totalRevenue / payments.length;
+  }, [totalRevenue, payments]);
 
   // ---- Operations ----
   const distinctTaskClients = useMemo(() => {
@@ -490,8 +483,8 @@ export default function AnalyticsTab() {
   </div>
   <div class="metrics-grid">
     <div class="metric-card">
-      <div class="label">Paid Invoices</div>
-      <div class="value">${paidInvoices.length}</div>
+      <div class="label">Total Payments</div>
+      <div class="value">${payments.length}</div>
     </div>
     <div class="metric-card">
       <div class="label">Average Fee</div>
@@ -523,7 +516,7 @@ export default function AnalyticsTab() {
     experts,
     totalRevenue,
     tasks,
-    paidInvoices,
+    payments,
     averageFee,
     taskCompletionRate,
     documentCount,
@@ -536,7 +529,7 @@ export default function AnalyticsTab() {
   if (loading) return <SkeletonGrid />;
 
   const hasClients = clients.length > 0;
-  const hasRevenue = paidInvoices.length > 0;
+  const hasRevenue = payments.length > 0;
   const hasTasks = tasks.length > 0;
 
   return (
@@ -669,7 +662,7 @@ export default function AnalyticsTab() {
 
         {!hasRevenue ? (
           <div className="bg-navy-light border border-gray-700 rounded-xl p-5">
-            <EmptyState message="No paid invoices yet. Revenue metrics will appear once clients start paying." />
+            <EmptyState message="No analytics data yet — data will appear as you add clients and process payments." />
           </div>
         ) : (
           <div className="space-y-6">
@@ -837,10 +830,10 @@ export default function AnalyticsTab() {
               </div>
               <div className="bg-navy-light border border-gray-700 rounded-xl p-5">
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">
-                  Paid Invoices
+                  Total Payments
                 </p>
                 <p className="text-2xl font-bold text-white">
-                  {paidInvoices.length}
+                  {payments.length}
                 </p>
               </div>
               <div className="bg-navy-light border border-gray-700 rounded-xl p-5">

@@ -208,11 +208,11 @@ export default function OverviewTab() {
           { count: totalClients },
           { count: totalExperts },
           { count: activeCases },
-          { data: allPaidInvoices },
-          { data: monthPaidInvoices },
-          { data: quarterPaidInvoices },
+          { data: allPayments },
+          { data: monthPayments },
+          { data: quarterPayments },
           { data: allClients },
-          { data: paidInvoicesAll },
+          { data: allPaymentsForChart },
           { data: pipelineClients },
           { data: activityRows },
           { data: clientCountries },
@@ -221,35 +221,27 @@ export default function OverviewTab() {
           supabase.from("clients").select("*", { count: "exact", head: true }),
           // Stats: expert count
           supabase.from("experts").select("*", { count: "exact", head: true }),
-          // Stats: active cases
+          // Stats: active cases (from client_experts)
           supabase
-            .from("clients")
+            .from("client_experts")
             .select("*", { count: "exact", head: true })
-            .in("overall_status", ["active", "in_progress", "Active", "In Progress"]),
-          // Stats: total revenue
-          supabase
-            .from("invoices")
-            .select("paid_amount")
-            .eq("status", "paid"),
+            .eq("status", "active"),
+          // Stats: total revenue (from payments)
+          supabase.from("payments").select("amount"),
           // Stats: revenue this month
           supabase
-            .from("invoices")
-            .select("paid_amount")
-            .eq("status", "paid")
-            .gte("paid_at", getStartOfMonth()),
+            .from("payments")
+            .select("amount")
+            .gte("payment_date", getStartOfMonth()),
           // Stats: revenue this quarter
           supabase
-            .from("invoices")
-            .select("paid_amount")
-            .eq("status", "paid")
-            .gte("paid_at", getStartOfQuarter()),
+            .from("payments")
+            .select("amount")
+            .gte("payment_date", getStartOfQuarter()),
           // Client growth chart
           supabase.from("clients").select("created_at"),
-          // Revenue chart
-          supabase
-            .from("invoices")
-            .select("paid_amount, paid_at")
-            .eq("status", "paid"),
+          // Revenue chart (from payments)
+          supabase.from("payments").select("amount, payment_date"),
           // Pipeline funnel
           supabase.from("clients").select("pipeline_stage"),
           // Activity feed
@@ -263,16 +255,16 @@ export default function OverviewTab() {
         ]);
 
         // --- Stats ---
-        const sumPaid = (rows: Array<{ paid_amount: number | null }> | null) =>
-          (rows ?? []).reduce((acc, r) => acc + (r.paid_amount ?? 0), 0);
+        const sumPayments = (rows: Array<{ amount: number }> | null) =>
+          (rows ?? []).reduce((acc, r) => acc + (r.amount ?? 0), 0);
 
         setStats({
           totalClients: totalClients ?? 0,
           totalExperts: totalExperts ?? 0,
           activeCases: activeCases ?? 0,
-          revenueThisMonth: sumPaid(monthPaidInvoices),
-          revenueThisQuarter: sumPaid(quarterPaidInvoices),
-          totalRevenue: sumPaid(allPaidInvoices),
+          revenueThisMonth: sumPayments(monthPayments),
+          revenueThisQuarter: sumPayments(quarterPayments),
+          totalRevenue: sumPayments(allPayments),
         });
 
         // --- Client Growth (last 12 months) ---
@@ -302,12 +294,12 @@ export default function OverviewTab() {
           revBuckets[getMonthLabel(d)] = 0;
         }
 
-        (paidInvoicesAll ?? []).forEach((inv: { paid_amount: number | null; paid_at: string | null }) => {
-          if (!inv.paid_at) return;
-          const d = new Date(inv.paid_at);
+        (allPaymentsForChart ?? []).forEach((p: { amount: number; payment_date: string }) => {
+          if (!p.payment_date) return;
+          const d = new Date(p.payment_date);
           const label = getMonthLabel(d);
           if (label in revBuckets) {
-            revBuckets[label] += inv.paid_amount ?? 0;
+            revBuckets[label] += p.amount ?? 0;
           }
         });
 
@@ -354,6 +346,14 @@ export default function OverviewTab() {
       } catch (err) {
         console.error("Failed to load overview data:", err);
         setError("Failed to load dashboard data. Please try again.");
+        setStats({
+          totalClients: 0,
+          totalExperts: 0,
+          activeCases: 0,
+          revenueThisMonth: 0,
+          revenueThisQuarter: 0,
+          totalRevenue: 0,
+        });
       } finally {
         setLoading(false);
       }
@@ -538,7 +538,7 @@ export default function OverviewTab() {
             {revenueChart.every((p) => p.revenue === 0) ? (
               <div className="h-64 flex items-center justify-center">
                 <p className="text-gray-500 text-sm">
-                  No revenue data yet. Send your first invoice to track revenue.
+                  No data yet
                 </p>
               </div>
             ) : (

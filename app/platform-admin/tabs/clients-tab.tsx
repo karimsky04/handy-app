@@ -111,19 +111,25 @@ export default function ClientsTab() {
   useEffect(() => {
     async function fetchClients() {
       setLoading(true);
-      const supabase = createClient();
+      try {
+        const supabase = createClient();
 
-      const { data, error } = await supabase
-        .from("clients")
-        .select("*, client_experts(expert:experts(full_name))")
-        .order("created_at", { ascending: false });
+        const { data, error } = await supabase
+          .from("clients")
+          .select("*, client_experts(expert:experts(full_name))")
+          .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Failed to fetch clients:", error);
+        if (error) {
+          console.error("Failed to fetch clients:", error);
+        }
+
+        setClients((data as ClientWithExperts[]) || []);
+      } catch (err) {
+        console.error("Failed to fetch clients:", err);
+        setClients([]);
+      } finally {
+        setLoading(false);
       }
-
-      setClients((data as ClientWithExperts[]) || []);
-      setLoading(false);
     }
 
     fetchClients();

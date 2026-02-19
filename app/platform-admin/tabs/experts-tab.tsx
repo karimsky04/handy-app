@@ -67,31 +67,37 @@ export default function ExpertsTab() {
 
   async function fetchExperts() {
     setLoading(true);
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    // Fetch all experts
-    const { data: expertsData } = await supabase
-      .from("experts")
-      .select("*")
-      .order("created_at", { ascending: false });
+      // Fetch all experts
+      const { data: expertsData } = await supabase
+        .from("experts")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    // Fetch client counts per expert
-    const { data: clientExpertsData } = await supabase
-      .from("client_experts")
-      .select("expert_id");
+      // Fetch client counts per expert
+      const { data: clientExpertsData } = await supabase
+        .from("client_experts")
+        .select("expert_id");
 
-    setExperts((expertsData as Expert[]) || []);
+      setExperts((expertsData as Expert[]) || []);
 
-    // Count clients per expert
-    const counts: Record<string, number> = {};
-    if (clientExpertsData) {
-      for (const row of clientExpertsData) {
-        counts[row.expert_id] = (counts[row.expert_id] || 0) + 1;
+      // Count clients per expert
+      const counts: Record<string, number> = {};
+      if (clientExpertsData) {
+        for (const row of clientExpertsData) {
+          counts[row.expert_id] = (counts[row.expert_id] || 0) + 1;
+        }
       }
+      setClientCounts(counts);
+    } catch (err) {
+      console.error("Failed to fetch experts:", err);
+      setExperts([]);
+      setClientCounts({});
+    } finally {
+      setLoading(false);
     }
-    setClientCounts(counts);
-
-    setLoading(false);
   }
 
   async function fetchExpertClients(expertId: string) {
