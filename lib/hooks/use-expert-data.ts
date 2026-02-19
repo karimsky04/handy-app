@@ -56,7 +56,7 @@ export function useDashboardStats() {
           .from("payments")
           .select("amount")
           .eq("expert_id", expert!.id)
-          .gte("paid_at", quarterStart.toISOString());
+          .gte("payment_date", quarterStart.toISOString());
 
         const earnedThisQuarter =
           payments?.reduce((sum: number, p: Record<string, number>) => sum + p.amount, 0) ?? 0;
@@ -192,10 +192,10 @@ export function useMonthlyEarnings() {
 
         const { data } = await supabase
           .from("payments")
-          .select("amount, paid_at")
+          .select("amount, payment_date")
           .eq("expert_id", expert!.id)
-          .gte("paid_at", sixMonthsAgo.toISOString())
-          .order("paid_at", { ascending: true });
+          .gte("payment_date", sixMonthsAgo.toISOString())
+          .order("payment_date", { ascending: true });
 
         if (!cancelled) {
           // Group by month
@@ -224,8 +224,8 @@ export function useMonthlyEarnings() {
             grouped[key] = 0;
           }
 
-          (data ?? []).forEach((p: { amount: number; paid_at: string }) => {
-            const d = new Date(p.paid_at);
+          (data ?? []).forEach((p: { amount: number; payment_date: string }) => {
+            const d = new Date(p.payment_date);
             const key = `${d.getFullYear()}-${d.getMonth()}`;
             if (key in grouped) {
               grouped[key] += p.amount;

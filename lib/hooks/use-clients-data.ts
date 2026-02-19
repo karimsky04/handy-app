@@ -129,7 +129,7 @@ export function useClientsData() {
         tax_years: client.tax_years ?? [],
         experts: otherExperts,
         progress,
-        earnings: ce.earnings ?? 0,
+        earnings: Number(ce.fee_amount) || 0,
         category: statusToCategory(client.overall_status),
         completed_at: client.updated_at,
       };

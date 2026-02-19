@@ -43,7 +43,8 @@ export interface ClientExpert {
   expert_id: string;
   jurisdiction: string;
   status: string;
-  earnings: number;
+  fee_amount: number | null;
+  fee_currency: string | null;
   created_at: string;
   // joined fields
   client?: Client;
@@ -69,10 +70,15 @@ export interface Payment {
   id: string;
   expert_id: string;
   client_id: string | null;
+  invoice_id: string | null;
   amount: number;
   currency: string;
+  payment_method: string | null;
   description: string | null;
-  paid_at: string;
+  payment_date: string;
+  status: string;
+  platform_fee: number | null;
+  external_payment_id: string | null;
   created_at: string;
 }
 
