@@ -425,6 +425,11 @@ export default function DocumentsTab({
   const [generatingLink, setGeneratingLink] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
+  // Document selection for download link
+  const [showDocSelector, setShowDocSelector] = useState(false);
+  const [selectedDocIds, setSelectedDocIds] = useState<Set<string>>(new Set());
+  const [showAllDocsInSelector, setShowAllDocsInSelector] = useState(false);
+
   // -------------------------------------------------------------------------
   // Fetch documents
   // -------------------------------------------------------------------------
@@ -626,30 +631,71 @@ export default function DocumentsTab({
   // Generate Client Download Link
   // -------------------------------------------------------------------------
 
+  const handleOpenDocSelector = useCallback(() => {
+    // Pre-select all "Tax Report" docs by default
+    const taxReportIds = new Set<string>(
+      documents
+        .filter((d) => d.doc_category === "Tax Report")
+        .map((d) => d.id)
+    );
+    setSelectedDocIds(taxReportIds);
+    setShowAllDocsInSelector(false);
+    setShowDocSelector(true);
+    setDownloadLink(null);
+    setLinkCopied(false);
+  }, [documents]);
+
+  const handleToggleDocSelection = useCallback((docId: string) => {
+    setSelectedDocIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(docId)) {
+        next.delete(docId);
+      } else {
+        next.add(docId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSelectAllDocs = useCallback(() => {
+    const visibleDocs = showAllDocsInSelector
+      ? documents
+      : documents.filter((d) => d.doc_category === "Tax Report");
+    setSelectedDocIds(new Set(visibleDocs.map((d) => d.id)));
+  }, [documents, showAllDocsInSelector]);
+
+  const handleDeselectAllDocs = useCallback(() => {
+    setSelectedDocIds(new Set());
+  }, []);
+
   const handleGenerateDownloadLink = useCallback(async () => {
+    if (selectedDocIds.size === 0) return;
     setGeneratingLink(true);
     setLinkCopied(false);
 
     try {
       const token = crypto.randomUUID();
       const expiresAt = new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000
-      ).toISOString(); // 7 days
+        Date.now() + 30 * 24 * 60 * 60 * 1000
+      ).toISOString(); // 30 days
 
-      await supabase.from("client_upload_tokens").insert({
+      await supabase.from("client_download_tokens").insert({
         client_id: clientId,
         token,
         expires_at: expiresAt,
+        is_active: true,
+        document_ids: Array.from(selectedDocIds),
       });
 
-      const link = `${window.location.origin}/client/documents/${token}`;
+      const link = `${window.location.origin}/download/${token}`;
       setDownloadLink(link);
+      setShowDocSelector(false);
     } catch {
       alert("Failed to generate download link.");
     } finally {
       setGeneratingLink(false);
     }
-  }, [supabase, clientId]);
+  }, [supabase, clientId, selectedDocIds]);
 
   const handleCopyLink = useCallback(async () => {
     if (!downloadLink) return;
@@ -845,22 +891,140 @@ export default function DocumentsTab({
             <LinkIcon className="h-4 w-4 text-gold" />
             Client Download Link
           </h3>
-          <button
-            onClick={handleGenerateDownloadLink}
-            disabled={generatingLink}
-            className="px-4 py-2 rounded-lg border border-gray-700 text-sm text-gray-300 hover:border-gold/40 hover:text-gold transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {generatingLink && <SpinnerIcon className="h-3 w-3" />}
-            {generatingLink ? "Generating..." : "Generate Link"}
-          </button>
+          {!showDocSelector && (
+            <button
+              onClick={handleOpenDocSelector}
+              disabled={documents.length === 0}
+              className="px-4 py-2 rounded-lg border border-gray-700 text-sm text-gray-300 hover:border-gold/40 hover:text-gold transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              Generate Link
+            </button>
+          )}
         </div>
         <p className="text-xs text-gray-500 mb-3">
-          Generate a secure link your client can use to access and download their
-          documents. Link expires in 7 days.
+          Generate a secure link your client can use to access and download
+          selected documents. Link expires in 30 days.
         </p>
 
+        {/* Document selector */}
+        {showDocSelector && (
+          <div className="mt-3 space-y-3">
+            {/* Controls row */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSelectAllDocs}
+                  className="text-xs text-gold hover:text-gold/80 transition-colors"
+                >
+                  Select All
+                </button>
+                <span className="text-gray-600 text-xs">|</span>
+                <button
+                  onClick={handleDeselectAllDocs}
+                  className="text-xs text-gray-400 hover:text-gray-300 transition-colors"
+                >
+                  Deselect All
+                </button>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <span className="text-xs text-gray-400">Show all</span>
+                <button
+                  onClick={() => setShowAllDocsInSelector((v) => !v)}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                    showAllDocsInSelector ? "bg-gold" : "bg-gray-600"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                      showAllDocsInSelector ? "translate-x-[18px]" : "translate-x-[3px]"
+                    }`}
+                  />
+                </button>
+              </label>
+            </div>
+
+            {/* Document list */}
+            <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
+              {(showAllDocsInSelector
+                ? documents
+                : documents.filter((d) => d.doc_category === "Tax Report")
+              ).map((doc) => {
+                const isSelected = selectedDocIds.has(doc.id);
+                return (
+                  <label
+                    key={doc.id}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors cursor-pointer ${
+                      isSelected
+                        ? "border-gold/30 bg-gold/5"
+                        : "border-gray-700/50 hover:border-gray-600"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleToggleDocSelection(doc.id)}
+                      className="accent-gold h-4 w-4 shrink-0"
+                    />
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                      <span className="text-sm text-gray-300 truncate" title={doc.file_name}>
+                        {truncateFileName(doc.file_name)}
+                      </span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium shrink-0 ${
+                          CATEGORY_BADGE_COLORS[doc.doc_category] ??
+                          CATEGORY_BADGE_COLORS.Other
+                        }`}
+                      >
+                        {doc.doc_category}
+                      </span>
+                      {doc.jurisdiction && (
+                        <span className="text-xs text-gray-500 shrink-0">
+                          {getFlag(doc.jurisdiction)} {doc.jurisdiction}
+                        </span>
+                      )}
+                    </div>
+                  </label>
+                );
+              })}
+              {!showAllDocsInSelector &&
+                documents.filter((d) => d.doc_category === "Tax Report").length === 0 && (
+                  <p className="text-xs text-gray-500 py-3 text-center">
+                    No Tax Report documents found. Toggle &quot;Show all&quot; to see
+                    all documents.
+                  </p>
+                )}
+            </div>
+
+            {/* Selected count & action buttons */}
+            <div className="flex items-center justify-between pt-2 border-t border-gray-700/50">
+              <span className="text-xs text-gray-400">
+                {selectedDocIds.size} document{selectedDocIds.size !== 1 ? "s" : ""} selected
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setShowDocSelector(false);
+                    setSelectedDocIds(new Set());
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-gray-700 text-sm text-gray-400 hover:text-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleGenerateDownloadLink}
+                  disabled={generatingLink || selectedDocIds.size === 0}
+                  className="px-4 py-2 rounded-lg bg-gold text-navy font-semibold text-sm hover:bg-gold/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {generatingLink && <SpinnerIcon className="h-3 w-3" />}
+                  {generatingLink ? "Generating..." : "Generate Link"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {downloadLink && (
-          <div className="flex items-center gap-2 bg-navy border border-gray-700 rounded-lg px-3 py-2">
+          <div className="flex items-center gap-2 bg-navy border border-gray-700 rounded-lg px-3 py-2 mt-3">
             <input
               type="text"
               readOnly

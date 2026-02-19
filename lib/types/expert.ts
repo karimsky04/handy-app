@@ -153,6 +153,7 @@ export interface Document {
   client_id: string;
   uploaded_by: string | null;
   uploaded_by_name: string | null;
+  uploaded_by_type: string | null; // "expert" | "client"
   file_path: string;
   file_name: string;
   file_size: number;
@@ -176,5 +177,16 @@ export interface ClientUploadToken {
   client_id: string;
   token: string;
   expires_at: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface ClientDownloadToken {
+  id: string;
+  client_id: string;
+  token: string;
+  expires_at: string;
+  is_active: boolean;
+  document_ids: string[];
   created_at: string;
 }
