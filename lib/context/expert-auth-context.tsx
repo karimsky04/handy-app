@@ -17,6 +17,7 @@ interface ExpertAuthContextValue {
   session: Session | null;
   expert: Expert | null;
   loading: boolean;
+  signingOut: boolean;
   error: string | null;
   signOut: () => Promise<void>;
 }
@@ -25,6 +26,7 @@ const ExpertAuthContext = createContext<ExpertAuthContextValue>({
   session: null,
   expert: null,
   loading: true,
+  signingOut: false,
   error: null,
   signOut: async () => {},
 });
@@ -34,6 +36,8 @@ export function ExpertAuthProvider({ children }: { children: ReactNode }) {
   const [expert, setExpert] = useState<Expert | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
+  const signingOutRef = useRef(false);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -94,7 +98,7 @@ export function ExpertAuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      if (!mounted) return;
+      if (!mounted || signingOutRef.current) return;
 
       if (event === "SIGNED_OUT") {
         setSession(null);
@@ -147,20 +151,23 @@ export function ExpertAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function signOut() {
+    // Set signing out flag FIRST to prevent any re-fetching
+    signingOutRef.current = true;
+    setSigningOut(true);
+    setSession(null);
+    setExpert(null);
+    // Redirect immediately — don't wait for signOut() API call
+    router.replace("/expert/login");
     try {
       await supabase.auth.signOut();
     } catch {
-      // Even if the API call fails (e.g., session already expired),
-      // we still clear local state and redirect below.
+      // Even if the API call fails, we've already cleared state and redirected.
     }
-    setSession(null);
-    setExpert(null);
-    router.replace("/expert/login");
   }
 
   return (
     <ExpertAuthContext.Provider
-      value={{ session, expert, loading, error, signOut }}
+      value={{ session, expert, loading, signingOut, error, signOut }}
     >
       {children}
     </ExpertAuthContext.Provider>
