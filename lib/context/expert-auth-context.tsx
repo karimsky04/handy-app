@@ -90,7 +90,12 @@ export function ExpertAuthProvider({ children }: { children: ReactNode }) {
         initialResolved = true;
         setLoading(false);
         const cur = pathnameRef.current;
-        if (!isLoginPage(cur)) {
+        // Platform-admin is protected by middleware — don't redirect on timeout,
+        // just let the page render. For expert routes, redirect to login.
+        if (
+          !isLoginPage(cur) &&
+          !cur.startsWith("/platform-admin")
+        ) {
           const login = getLoginPath(cur);
           window.location.href = `${login}?redirectTo=${encodeURIComponent(cur)}`;
         }

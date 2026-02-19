@@ -143,7 +143,7 @@ export default function PlatformAdminPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-white truncate">
-                    {expert?.full_name ?? "Loading..."}
+                    {expert?.full_name ?? "Admin"}
                   </p>
                   <p className="text-xs text-gray-500 truncate">Admin</p>
                 </div>
